@@ -4,7 +4,7 @@
   (:require [psql.types]
             [psql.pool :refer [pooled-db] :as pool]
             [psql.pgpass :as pgpass]
-            [clojure.java.jdbc :as jdbc])
+            [next.jdbc :as jdbc])
   (:import org.postgresql.util.PGobject
            org.postgresql.util.PGmoney
            org.postgresql.util.PGInterval
@@ -14,18 +14,17 @@
            org.postgresql.geometric.PGlseg
            org.postgresql.geometric.PGpath
            org.postgresql.geometric.PGpoint
-           org.postgresql.geometric.PGpolygon
-           org.postgis.PGgeometry))
+           org.postgresql.geometric.PGpolygon))
 
 (defn getenv->map
-  "Convert crazy non-map thingy which comes from (System/getenv) into a keywordized map.
-  If no argument given, fetch env with (System/getenv)."
-  ([x]
-   {:pre [(= (type x) java.util.Collections$UnmodifiableMap)]
-    :post [(map? %)]}
-   (zipmap
-    (map keyword (keys x))
-    (vals x)))
+  "Keywordize an environment-style map. With no argument, reads (System/getenv).
+  Accepts any map-like input so callers can pass a plain map in tests."
+  ([env]
+   {:post [(map? %)]}
+   (persistent!
+    (reduce-kv (fn [acc k v] (assoc! acc (keyword k) v))
+               (transient {})
+               (into {} env))))
   ([]
    (getenv->map (System/getenv))))
 
@@ -78,12 +77,15 @@
     true))
 
 (defn tables
+  "Return the set of table names (as keywords) visible in the database DB."
   [db]
-  (jdbc/with-db-metadata [md db]
-    (->> (doall (jdbc/metadata-result (.getTables md nil nil nil (into-array ["TABLE"]))))
-         (map :table_name)
-         (map keyword)
-         (set))))
+  (with-open [conn (jdbc/get-connection db)]
+    (let [md (.getMetaData ^java.sql.Connection conn)
+          rs (.getTables md nil nil nil (into-array String ["TABLE"]))]
+      (loop [acc (transient #{})]
+        (if (.next rs)
+          (recur (conj! acc (keyword (.getString rs "TABLE_NAME"))))
+          (persistent! acc))))))
 
 ;;
 ;; Types

@@ -1,21 +1,24 @@
 (ns psql.types
-  "Participate in clojure.java.jdbc's ISQLValue and IResultSetReadColumn protocols
-   to allow using PostGIS geometry types without the PGgeometry wrapper, support the
-   PGjson type and allow coercing clojure structures into PostGIS types."
+  "Extend next.jdbc's SettableParameter and ReadableColumn protocols so that
+   PostGIS geometry, PGobject (json/jsonb), SQL arrays and inet values move
+   between Clojure data and PostgreSQL without manual wrapping."
   (:require [psql.coerce :as coerce]
-            [clojure.java.jdbc :as jdbc]
+            [next.jdbc.prepare :as prepare]
+            [next.jdbc.result-set :as rs]
+            [clojure.string :as str]
             [clojure.xml :as xml]
             [cheshire.core :as json])
   (:import [org.postgresql.util PGobject]
-           [org.postgis Geometry PGgeometry PGgeometryLW]
-           [java.sql PreparedStatement ParameterMetaData]))
+           [org.postgis Geometry PGgeometryLW]
+           [java.sql PreparedStatement]
+           [java.net InetAddress]))
 
 ;;
-;; Helpers
+;; Metadata helpers (handy when debugging which SQL type a column/parameter is)
 ;;
 
 (defn pmd
-  "Convert ParameterMetaData to a map."
+  "Convert one column of ParameterMetaData to a map."
   [^java.sql.ParameterMetaData md i]
   {:parameter-class (.getParameterClassName md i)
    :parameter-mode (.getParameterMode md i)
@@ -27,7 +30,7 @@
    :signed? (.isSigned md i)})
 
 (defn rsmd
-  "Convert ResultSetMetaData to a map."
+  "Convert one column of ResultSetMetaData to a map."
   [^java.sql.ResultSetMetaData md i]
   {:catalog-name (.getCatalogName md i)
    :column-class-name (.getColumnClassName md i)
@@ -49,47 +52,32 @@
    :signed? (.isSigned md i)
    :writable? (.isWritable md i)})
 
+(defn- param-type-name
+  "PostgreSQL SQL type name of parameter I (1-based) on prepared statement PS."
+  [^PreparedStatement ps ^long i]
+  (.getParameterTypeName (.getParameterMetaData ps) i))
+
 ;;;;
-;;
-;; Data type conversion for SQL query parameters
-;;
+;; Write side: convert Clojure values into SQL parameters.
 ;;;;
 
-
-;;
-;; Extend clojure.java.jdbc's protocol for getting SQL values of things to support PostGIS objects.
-;;
-(extend-protocol jdbc/ISQLValue
-  org.postgis.Geometry
-  (sql-value [v]
-    (PGgeometryLW. v)))
-
-;;
-;; Extend clojure.java.jdbc's protocol for converting query parameters to SQL values.
-;; We try to determine which SQL type is correct for which clojure structure.
-;; 1. See query parameter meta data. JDBC might already know what PostgreSQL wants.
-;; 2. Look into parameter's clojure metadata for type hints
-;;
-
-;; multimethod selector for conversion funcs
+;; multimethod selector keyed on the target SQL type name
 (defn parameter-dispatch-fn
   [_ type-name]
   (keyword type-name))
 
-;;
-;; Convert Clojure maps to SQL parameter values
-;;
+(defn- to-pg-json
+  [data json-type]
+  (doto (PGobject.)
+    (.setType (name json-type))
+    (.setValue (json/generate-string data))))
 
+;; Clojure maps -> SQL value, by target column type
 (defmulti map->parameter parameter-dispatch-fn)
 
 (defmethod map->parameter :geometry
   [m _]
-  (jdbc/sql-value (coerce/geojson->postgis m)))
-
-(defn- to-pg-json [data json-type]
-  (doto (PGobject.)
-    (.setType (name json-type))
-    (.setValue (json/generate-string data))))
+  (PGgeometryLW. (coerce/geojson->postgis m)))
 
 (defmethod map->parameter :json
   [m _]
@@ -98,18 +86,12 @@
 (defmethod map->parameter :jsonb
   [m _]
   (to-pg-json m :jsonb))
-(extend-protocol jdbc/ISQLParameter
-  clojure.lang.IPersistentMap
-  (set-parameter [m ^PreparedStatement s ^long i]
-    (let [meta (.getParameterMetaData s)]
-      (if-let [type-name (keyword (.getParameterTypeName meta i))]
-        (.setObject s i (map->parameter m type-name))
-        (.setObject s i m)))))
 
-;;
-;; Convert clojure vectors to SQL parameter values
-;;
+(defmethod map->parameter :default
+  [m _]
+  m)
 
+;; Clojure vectors -> SQL value, by target column type
 (defmulti vec->parameter parameter-dispatch-fn)
 
 (defmethod vec->parameter :json
@@ -123,142 +105,133 @@
 (defmethod vec->parameter :inet
   [v _]
   (if (= (count v) 4)
-    (doto (PGobject.) (.setType "inet") (.setValue (clojure.string/join "." v)))
+    (doto (PGobject.) (.setType "inet") (.setValue (str/join "." v)))
     v))
 
 (defmethod vec->parameter :default
   [v _]
   v)
 
-(extend-protocol jdbc/ISQLParameter
-  clojure.lang.IPersistentVector
-  (set-parameter [v ^PreparedStatement s ^long i]
-    (let [conn (.getConnection s)
-          meta (.getParameterMetaData s)
-          type-name (.getParameterTypeName meta i)]
-      (if-let [elem-type (when type-name (second (re-find #"^_(.*)" type-name)))]
-        (.setObject s i (.createArrayOf conn elem-type (to-array v)))
-        (.setObject s i (vec->parameter v type-name))))))
-
-;;
-;; Convert all sequables to SQL parameter values by handling them like vectors.
-;;
-
-(extend-protocol jdbc/ISQLParameter
-  clojure.lang.Seqable
-  (set-parameter [seqable ^PreparedStatement s ^long i]
-    (jdbc/set-parameter (vec (seq seqable)) s i)))
-
-;;
-;; Convert numbers to SQL parameter values.
-;; Conversion is done for target types like timestamp
-;; for which it makes sense to accept numeric values.
-;;
-
+;; Numbers -> SQL value, by target column type
 (defmulti num->parameter parameter-dispatch-fn)
 
 (defmethod num->parameter :timestamptz
   [v _]
-  (java.sql.Timestamp. v))
+  (java.sql.Timestamp. (long v)))
 
 (defmethod num->parameter :timestamp
   [v _]
-  (java.sql.Timestamp. v))
+  (java.sql.Timestamp. (long v)))
 
 (defmethod num->parameter :default
   [v _]
   v)
 
-(extend-protocol clojure.java.jdbc/ISQLParameter
+(extend-protocol prepare/SettableParameter
+  ;; Maps become json/jsonb/geometry depending on the column type.
+  clojure.lang.IPersistentMap
+  (set-parameter [m ^PreparedStatement ps ^long i]
+    (.setObject ps i (map->parameter m (keyword (param-type-name ps i)))))
+
+  ;; Vectors become SQL arrays, or json/jsonb/inet for those column types.
+  clojure.lang.IPersistentVector
+  (set-parameter [v ^PreparedStatement ps ^long i]
+    (let [type-name (param-type-name ps i)]
+      (if-let [elem-type (when type-name (second (re-find #"^_(.*)" type-name)))]
+        (.setObject ps i (.createArrayOf (.getConnection ps) elem-type (to-array v)))
+        (.setObject ps i (vec->parameter v type-name)))))
+
+  ;; Any other seqable (lists, lazy seqs) is handled like a vector.
+  clojure.lang.Seqable
+  (set-parameter [seqable ^PreparedStatement ps ^long i]
+    (prepare/set-parameter (vec (seq seqable)) ps i))
+
+  ;; Numbers may need coercion for e.g. timestamp columns.
   java.lang.Number
-  (set-parameter [num ^java.sql.PreparedStatement s ^long i]
-    (let [meta (.getParameterMetaData s)
-          type-name (.getParameterTypeName meta i)]
-      (.setObject s i (num->parameter num type-name)))))
+  (set-parameter [n ^PreparedStatement ps ^long i]
+    (.setObject ps i (num->parameter n (param-type-name ps i))))
 
-;; Inet addresses
-(extend-protocol clojure.java.jdbc/ISQLParameter
-  java.net.InetAddress
-  (set-parameter [^java.net.InetAddress inet-addr ^java.sql.PreparedStatement s ^long i]
-    (.setObject s i (doto (PGobject.)
-                      (.setType "inet")
-                      (.setValue (.getHostAddress inet-addr))))))
+  ;; Inet addresses map onto PostgreSQL inet.
+  InetAddress
+  (set-parameter [^InetAddress inet-addr ^PreparedStatement ps ^long i]
+    (.setObject ps i (doto (PGobject.)
+                       (.setType "inet")
+                       (.setValue (.getHostAddress inet-addr)))))
+
+  ;; PostGIS geometry objects wrap into the lightweight PGgeometry.
+  Geometry
+  (set-parameter [^Geometry g ^PreparedStatement ps ^long i]
+    (.setObject ps i (PGgeometryLW. g))))
 
 ;;;;
-;;
-;; Data type conversions for query result set values.
-;;
+;; Read side: convert SQL result values into Clojure data.
 ;;;;
-
-
-;;
-;; PGobject parsing magic
-;;
 
 (defn read-pg-vector
-  "oidvector, int2vector, etc. are space separated lists"
+  "oidvector, int2vector, etc. are space separated lists."
   [s]
-  (when (seq s) (clojure.string/split s #"\s+")))
+  (when (seq s) (str/split s #"\s+")))
 
 (defn read-pg-array
-  "Arrays are of form {1,2,3}"
+  "Arrays are of the form {1,2,3}."
   [s]
-  (when (seq s) (when-let [[_ content] (re-matches #"^\{(.+)\}$" s)] (if-not (empty? content) (clojure.string/split content #"\s*,\s*") []))))
+  (when (seq s)
+    (when-let [[_ content] (re-matches #"^\{(.+)\}$" s)]
+      (if-not (empty? content) (str/split content #"\s*,\s*") []))))
 
 (defmulti read-pgobject
-  "Convert returned PGobject to Clojure value."
-  #(keyword (when % (.getType ^org.postgresql.util.PGobject %))))
+  "Convert a returned PGobject to a Clojure value."
+  (fn [^PGobject x] (keyword (when x (.getType x)))))
 
 (defmethod read-pgobject :oidvector
-  [^org.postgresql.util.PGobject x]
-  (when-let [val (.getValue x)]
-    (mapv read-string (read-pg-vector val))))
+  [^PGobject x]
+  (when-let [v (.getValue x)] (mapv read-string (read-pg-vector v))))
 
 (defmethod read-pgobject :int2vector
-  [^org.postgresql.util.PGobject x]
-  (when-let [val (.getValue x)]
-    (mapv read-string (read-pg-vector val))))
+  [^PGobject x]
+  (when-let [v (.getValue x)] (mapv read-string (read-pg-vector v))))
 
 (defmethod read-pgobject :anyarray
-  [^org.postgresql.util.PGobject x]
-  (when-let [val (.getValue x)]
-    (vec (read-pg-array val))))
+  [^PGobject x]
+  (when-let [v (.getValue x)] (vec (read-pg-array v))))
 
 (defmethod read-pgobject :json
-  [^org.postgresql.util.PGobject x]
-  (when-let [val (.getValue x)]
-    (json/parse-string val)))
+  [^PGobject x]
+  (when-let [v (.getValue x)] (json/parse-string v)))
 
 (defmethod read-pgobject :jsonb
-  [^org.postgresql.util.PGobject x]
-  (when-let [val (.getValue x)]
-    (json/parse-string val)))
+  [^PGobject x]
+  (when-let [v (.getValue x)] (json/parse-string v)))
 
 (defmethod read-pgobject :default
-  [^org.postgresql.util.PGobject x]
+  [^PGobject x]
   (.getValue x))
 
-;;
-;; Extend clojure.java.jdbc's protocol for interpreting ResultSet column values.
-;;
-(extend-protocol jdbc/IResultSetReadColumn
-
-  ;; Return the PostGIS geometry object instead of PGgeometry wrapper
+(extend-protocol rs/ReadableColumn
+  ;; Return the PostGIS geometry (as GeoJSON) instead of the PGgeometry wrapper.
   org.postgis.PGgeometry
-  (result-set-read-column [val _ _]
-    (coerce/postgis->geojson (.getGeometry val)))
+  (read-column-by-label [^org.postgis.PGgeometry v _]
+    (coerce/postgis->geojson (.getGeometry v)))
+  (read-column-by-index [^org.postgis.PGgeometry v _ _]
+    (coerce/postgis->geojson (.getGeometry v)))
 
-  ;; Parse SQLXML to a Clojure map representing the XML content
+  ;; Parse SQLXML into a Clojure map representing the XML content.
   java.sql.SQLXML
-  (result-set-read-column [val _ _]
-    (xml/parse (.getBinaryStream val)))
+  (read-column-by-label [^java.sql.SQLXML v _]
+    (xml/parse (.getBinaryStream v)))
+  (read-column-by-index [^java.sql.SQLXML v _ _]
+    (xml/parse (.getBinaryStream v)))
 
-  ;; Covert java.sql.Array to Clojure vector
+  ;; Convert java.sql.Array to a Clojure vector.
   java.sql.Array
-  (result-set-read-column [val _ _]
-    (vec (.getArray val)))
+  (read-column-by-label [^java.sql.Array v _]
+    (vec (.getArray v)))
+  (read-column-by-index [^java.sql.Array v _ _]
+    (vec (.getArray v)))
 
-  ;; PGobjects have their own multimethod
-  org.postgresql.util.PGobject
-  (result-set-read-column [val _ _]
-    (read-pgobject val)))
+  ;; PGobjects route through the read-pgobject multimethod.
+  PGobject
+  (read-column-by-label [^PGobject v _]
+    (read-pgobject v))
+  (read-column-by-index [^PGobject v _ _]
+    (read-pgobject v)))
