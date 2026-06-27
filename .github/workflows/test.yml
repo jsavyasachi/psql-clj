@@ -26,10 +26,23 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('project.clj') }}
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/project.clj') }}
           restore-keys: ${{ runner.os }}-m2-
-      - run: lein with-profile +${{ matrix.clojure }} check
-      - run: lein with-profile +${{ matrix.clojure }} test
+      - name: core
+        run: |
+          lein with-profile +${{ matrix.clojure }} check
+          lein with-profile +${{ matrix.clojure }} test
+          lein install
+      - name: gis
+        working-directory: modules/gis
+        run: |
+          lein with-profile +${{ matrix.clojure }} check
+          lein with-profile +${{ matrix.clojure }} test
+      - name: aws
+        working-directory: modules/aws
+        run: |
+          lein with-profile +${{ matrix.clojure }} check
+          lein with-profile +${{ matrix.clojure }} test
 
   integration:
     name: integration (postgis)
@@ -65,6 +78,12 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('project.clj') }}
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/project.clj') }}
           restore-keys: ${{ runner.os }}-m2-
-      - run: lein test :integration
+      - name: core integration
+        run: |
+          lein install
+          lein test :integration
+      - name: gis integration
+        working-directory: modules/gis
+        run: lein test :integration
