@@ -1,4 +1,4 @@
-(ns clj-postgresql.pgpass
+(ns psql.pgpass
   "Logic for matching passwords ~/.pgpass passwords to db specs."
   (:require [clojure.java.io :as io]
             [clojure.string :as str]))

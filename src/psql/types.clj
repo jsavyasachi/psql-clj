@@ -1,8 +1,8 @@
-(ns clj-postgresql.types
+(ns psql.types
   "Participate in clojure.java.jdbc's ISQLValue and IResultSetReadColumn protocols
    to allow using PostGIS geometry types without the PGgeometry wrapper, support the
    PGjson type and allow coercing clojure structures into PostGIS types."
-  (:require [clj-postgresql.coerce :as coerce]
+  (:require [psql.coerce :as coerce]
             [clojure.java.jdbc :as jdbc]
             [clojure.xml :as xml]
             [cheshire.core :as json])

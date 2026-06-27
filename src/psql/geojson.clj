@@ -1,4 +1,4 @@
-(ns clj-postgresql.geojson
+(ns psql.geojson
   (:require [schema.core :as s]))
 
 ;;

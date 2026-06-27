@@ -1,9 +1,9 @@
-(ns clj-postgresql.core
+(ns psql.core
   "Allow using PostgreSQL from Clojure as effortlessly as possible by reading connection parameter defaults from
   PostgreSQL environment variables PGDATABASE, PGHOST, PGPORT, PGUSER and by reading password from ~/.pgpass if available."
-  (:require [clj-postgresql.types]
-            [clj-postgresql.pool :refer [pooled-db] :as pool]
-            [clj-postgresql.pgpass :as pgpass]
+  (:require [psql.types]
+            [psql.pool :refer [pooled-db] :as pool]
+            [psql.pgpass :as pgpass]
             [clojure.java.jdbc :as jdbc])
   (:import org.postgresql.util.PGobject
            org.postgresql.util.PGmoney

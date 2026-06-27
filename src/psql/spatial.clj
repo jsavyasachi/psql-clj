@@ -1,5 +1,5 @@
-(ns clj-postgresql.spatial
-  ":require [clj-postgresql.spatial :as st]"
+(ns psql.spatial
+  ":require [psql.spatial :as st]"
   (:import [org.postgis Geometry PGgeometryLW PGgeometry LineString LinearRing MultiLineString MultiPoint MultiPolygon Point Polygon]))
 
 (defn srid

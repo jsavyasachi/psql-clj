@@ -1,5 +1,5 @@
-(ns clj-postgresql.coerce
-  (:require [clj-postgresql.spatial :as st]))
+(ns psql.coerce
+  (:require [psql.spatial :as st]))
 
 (defmulti geojson->postgis :type)
 

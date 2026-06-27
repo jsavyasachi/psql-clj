@@ -1,4 +1,4 @@
-(ns clj-postgresql.pool
+(ns psql.pool
   "Hikari based connection pool"
   (:require [hikari-cp.core :as hikari])
   (:import (java.util.concurrent TimeUnit)))
