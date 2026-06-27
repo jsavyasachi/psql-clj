@@ -17,16 +17,29 @@ PostgreSQL helpers for Clojure: environment- and `.pgpass`-aware connection spec
 
 ## Installation
 
-Leiningen / Boot:
+The library is split into three artifacts so you only pull what you use. Core
+has no PostGIS or AWS dependencies.
+
+| Artifact | For |
+|---|---|
+| `net.clojars.savya/psql-clj` | connection specs, pooling, json/jsonb, arrays, inet, enums |
+| `net.clojars.savya/psql-clj-gis` | PostGIS geometry + geography (pulls `postgis-jdbc`) |
+| `net.clojars.savya/psql-clj-aws` | RDS/Aurora IAM authentication (pulls the AWS SDK) |
+
+Leiningen:
 
 ```clj
-[net.clojars.savya/psql-clj "1.0.0"]
+[net.clojars.savya/psql-clj "2.0.0"]
+[net.clojars.savya/psql-clj-gis "2.0.0"]   ;; optional, for PostGIS
+[net.clojars.savya/psql-clj-aws "2.0.0"]   ;; optional, for RDS IAM auth
 ```
 
 deps.edn:
 
 ```clj
-net.clojars.savya/psql-clj {:mvn/version "1.0.0"}
+net.clojars.savya/psql-clj     {:mvn/version "2.0.0"}
+net.clojars.savya/psql-clj-gis {:mvn/version "2.0.0"}  ;; optional, for PostGIS
+net.clojars.savya/psql-clj-aws {:mvn/version "2.0.0"}  ;; optional, for RDS IAM auth
 ```
 
 ## Connecting
@@ -84,16 +97,19 @@ target SQL type reported by PostgreSQL decides the conversion.
 - **Vectors** — array columns (`int[]`, `text[]`, ...) accept vectors; `inet` accepts `[192 168 1 11]`. Extend with `(defmethod psql.types/vec->parameter :mytype [v _] ...)`.
 - **Other seqables** (lists, lazy seqs) are treated like vectors.
 - **Numbers** bound to `timestamp`/`timestamptz` become `java.sql.Timestamp`. Extend with `(defmethod psql.types/num->parameter :mytype [n _] ...)`.
+- **Keywords** bind to `enum` columns by name: `:happy` goes into a `mood` enum as `'happy'` (and `?::mood` casts work). Enum values read back as plain strings.
 
-On the way out, `json`/`jsonb` parse to Clojure data, arrays become vectors, and PostGIS geometry is returned as GeoJSON.
+On the way out, `json`/`jsonb` parse to Clojure data and arrays become vectors.
 
-## PostGIS geometry
+## PostGIS geometry & geography (psql-clj-gis)
 
-`psql.spatial` builds `net.postgis.jdbc.geometry.*` objects. They can be used
-directly as query parameters and are read back as GeoJSON maps.
+Add `net.clojars.savya/psql-clj-gis` and require `psql.gis.types` to activate
+the coercions. `psql.spatial` builds `net.postgis.jdbc.geometry.*` objects; they
+can be used directly as query parameters and are read back as GeoJSON maps.
 
 ```clj
-(require '[psql.spatial :as st])
+(require '[psql.spatial :as st]
+         '[psql.gis.types])   ;; registers geometry/geography next.jdbc coercion
 
 (st/point 1 2)                           ;=> POINT(1 2)
 (st/point [1 2])                         ;=> POINT(1 2)
@@ -105,6 +121,38 @@ directly as query parameters and are read back as GeoJSON maps.
 (jdbc/execute-one! db ["SELECT geom FROM shapes LIMIT 1"])
 ;; => {:shapes/geom {:type :Point :coordinates [1.0 2.0]}}
 ```
+
+For `geography` columns (WGS84), tag the geometry with SRID 4326 via
+`st/geography`:
+
+```clj
+(jdbc/execute! db ["INSERT INTO places (geog) VALUES (?)"
+                   (st/geography (st/point [13.4 52.5]))])
+```
+
+## RDS IAM authentication (psql-clj-aws)
+
+Add `net.clojars.savya/psql-clj-aws` to authenticate to RDS/Aurora with a
+short-lived IAM token instead of a static password. `iam-spec` returns a normal
+spec with the token as `:password` (and `sslmode=require`):
+
+```clj
+(require '[psql.aws :as aws]
+         '[psql.pool :as pool]
+         '[next.jdbc :as jdbc])
+
+(def spec (aws/iam-spec :host "mydb.abc123.us-east-1.rds.amazonaws.com"
+                        :user "appuser"
+                        :dbname "app"
+                        :region "us-east-1"))
+
+(jdbc/execute! spec ["SELECT 1"])
+;; or pool it: (pool/pooled-db spec {})
+```
+
+The token is signed locally from the default AWS credential chain (no API call);
+pass `:credentials-provider` to override it. Tokens last ~15 minutes, so refresh
+the spec (and rebuild the pool) periodically.
 
 ## PostgreSQL geometric types
 
@@ -122,21 +170,25 @@ directly as query parameters and are read back as GeoJSON maps.
 
 ## Development
 
+Core is at the repo root; the companions live under `modules/gis` and
+`modules/aws` and depend on core, so install core locally first.
+
 ```bash
-lein check          # compile every namespace (0 reflection warnings)
-lein test           # unit tests (no database needed)
-lein test :integration   # round-trips against a live PostgreSQL+PostGIS
-lein all test       # unit tests across Clojure 1.10 / 1.11 / 1.12
+lein check && lein test && lein install        # core (root)
+cd modules/gis && lein check && lein test       # PostGIS companion
+cd modules/aws && lein check && lein test       # AWS companion
+lein all test                                   # across Clojure 1.10 / 1.11 / 1.12
 ```
 
-The integration suite reads the standard `PG*` variables. A quick local
-database:
+The `:integration` suites (core and gis) read the standard `PG*` variables. A
+quick local PostGIS:
 
 ```bash
 docker run -d -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=psql_clj_test \
   -p 5432:5432 postgis/postgis:16-3.4
-PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres PGDATABASE=psql_clj_test \
-  lein test :integration
+export PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres PGDATABASE=psql_clj_test
+lein test :integration                          # core
+(cd modules/gis && lein test :integration)      # gis
 ```
 
 ## License

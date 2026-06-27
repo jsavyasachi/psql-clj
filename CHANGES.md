@@ -3,6 +3,27 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.0] - 2026-06-27
+
+Modular split plus new features, addressing the upstream issue/PR backlog.
+
+### Changed
+- **Breaking:** PostGIS moved out of core into a new
+  `net.clojars.savya/psql-clj-gis` artifact. Core no longer pulls
+  `postgis-jdbc`/`postgis-geometry` (addresses upstream #24, #12). PostGIS users
+  add `psql-clj-gis` and `(require '[psql.gis.types])`.
+
+### Added
+- `net.clojars.savya/psql-clj-gis` — `psql.spatial` / `coerce` / `geojson` plus
+  the geometry next.jdbc coercion, now an opt-in companion.
+- PostGIS **geography** support (upstream #5): `psql.spatial/geography` (SRID
+  4326) and `PGgeography` reads.
+- **Enum** binding (upstream #9): a Clojure keyword binds to an `enum` column by
+  name.
+- `net.clojars.savya/psql-clj-aws` — RDS/Aurora **IAM authentication** (revives
+  upstream PR #26 on the current AWS SDK v2): `psql.aws/iam-spec` /
+  `rds-auth-token`.
+
 ## [1.0.0] - 2026-06-27
 
 Revival and modernization of [remodoy/clj-postgresql](https://github.com/remodoy/clj-postgresql),
@@ -36,4 +57,5 @@ republished as `net.clojars.savya/psql-clj`.
 - Unused `clj-time` and `org.clojure/java.data` dependencies.
 - Travis configuration, `deps.edn` and `Makefile`.
 
+[2.0.0]: https://github.com/jsavyasachi/psql-clj/releases/tag/v2.0.0
 [1.0.0]: https://github.com/jsavyasachi/psql-clj/releases/tag/v1.0.0
