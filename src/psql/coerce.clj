@@ -31,27 +31,27 @@
   (postgis->coords [o]))
 
 (extend-protocol PostgisToCoords
-  org.postgis.Point
+  net.postgis.jdbc.geometry.Point
   (postgis->coords [o]
     (if (= (.dimension o) 3)
       [(.x o) (.y o) (.z o)]
       [(.x o) (.y o)]))
-  org.postgis.MultiPoint
+  net.postgis.jdbc.geometry.MultiPoint
   (postgis->coords [o]
     (mapv postgis->coords (.getPoints o)))
-  org.postgis.LineString
+  net.postgis.jdbc.geometry.LineString
   (postgis->coords [o]
     (mapv postgis->coords (.getPoints o)))
-  org.postgis.MultiLineString
+  net.postgis.jdbc.geometry.MultiLineString
   (postgis->coords [o]
     (mapv postgis->coords (.getLines o)))
-  org.postgis.LinearRing
+  net.postgis.jdbc.geometry.LinearRing
   (postgis->coords [o]
     (mapv postgis->coords (.getPoints o)))
-  org.postgis.Polygon
+  net.postgis.jdbc.geometry.Polygon
   (postgis->coords [o]
     (mapv postgis->coords (for [i (range (.numRings o))] (.getRing o i))))
-  org.postgis.MultiPolygon
+  net.postgis.jdbc.geometry.MultiPolygon
   (postgis->coords [o]
     (mapv postgis->coords (.getPolygons o))))
 
@@ -59,27 +59,27 @@
   (postgis->geojson [o]))
 
 (extend-protocol PostgisToGeoJSON
-  org.postgis.Point
+  net.postgis.jdbc.geometry.Point
   (postgis->geojson [o]
     {:type :Point
      :coordinates (postgis->coords o)})
-  org.postgis.MultiPoint
+  net.postgis.jdbc.geometry.MultiPoint
   (postgis->geojson [o]
     {:type :MultiPoint
      :coordinates (postgis->coords o)})
-  org.postgis.LineString
+  net.postgis.jdbc.geometry.LineString
   (postgis->geojson [o]
     {:type :LineString
      :coordinates (postgis->coords o)})
-  org.postgis.MultiLineString
+  net.postgis.jdbc.geometry.MultiLineString
   (postgis->geojson [o]
     {:type :MultiLineString
      :coordinates (postgis->coords o)})
-  org.postgis.Polygon
+  net.postgis.jdbc.geometry.Polygon
   (postgis->geojson [o]
     {:type :Polygon
      :coordinates (postgis->coords o)})
-  org.postgis.MultiPolygon
+  net.postgis.jdbc.geometry.MultiPolygon
   (postgis->geojson [o]
     {:type :MultiPolygon
      :coordinates (postgis->coords o)}))

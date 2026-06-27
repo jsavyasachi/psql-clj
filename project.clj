@@ -6,7 +6,7 @@
   :scm {:name "git" :url "https://github.com/jsavyasachi/psql-clj"}
   :dependencies [[com.github.seancorfield/next.jdbc "1.3.1118"]
                  [org.postgresql/postgresql "42.7.7"]
-                 [net.postgis/postgis-jdbc "2.3.0" :exclusions [postgresql org.postgresql/postgresql]]
+                 [net.postgis/postgis-jdbc "2024.1.0" :exclusions [postgresql org.postgresql/postgresql]]
                  [hikari-cp "4.1.0"]
                  [cheshire "6.2.0"]
                  [prismatic/schema "1.4.1"]]

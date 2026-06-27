@@ -9,7 +9,8 @@
             [clojure.xml :as xml]
             [cheshire.core :as json])
   (:import [org.postgresql.util PGobject]
-           [org.postgis Geometry PGgeometryLW]
+           [net.postgis.jdbc.geometry Geometry]
+           [net.postgis.jdbc PGgeometryLW]
            [java.sql PreparedStatement]
            [java.net InetAddress]))
 
@@ -77,7 +78,7 @@
 
 (defmethod map->parameter :geometry
   [m _]
-  (PGgeometryLW. (coerce/geojson->postgis m)))
+  (PGgeometryLW. ^Geometry (coerce/geojson->postgis m)))
 
 (defmethod map->parameter :json
   [m _]
@@ -161,7 +162,7 @@
   ;; PostGIS geometry objects wrap into the lightweight PGgeometry.
   Geometry
   (set-parameter [^Geometry g ^PreparedStatement ps ^long i]
-    (.setObject ps i (PGgeometryLW. g))))
+    (.setObject ps i (PGgeometryLW. ^Geometry g))))
 
 ;;;;
 ;; Read side: convert SQL result values into Clojure data.
@@ -209,10 +210,10 @@
 
 (extend-protocol rs/ReadableColumn
   ;; Return the PostGIS geometry (as GeoJSON) instead of the PGgeometry wrapper.
-  org.postgis.PGgeometry
-  (read-column-by-label [^org.postgis.PGgeometry v _]
+  net.postgis.jdbc.PGgeometry
+  (read-column-by-label [^net.postgis.jdbc.PGgeometry v _]
     (coerce/postgis->geojson (.getGeometry v)))
-  (read-column-by-index [^org.postgis.PGgeometry v _ _]
+  (read-column-by-index [^net.postgis.jdbc.PGgeometry v _ _]
     (coerce/postgis->geojson (.getGeometry v)))
 
   ;; Parse SQLXML into a Clojure map representing the XML content.

@@ -121,5 +121,5 @@
   {:pre [(coll? points)]
    :post [(s/validate MultiPoint %)]}
   {:type :MultiPoint
-   :coordinates nil})
+   :coordinates (mapv vec points)})
 
