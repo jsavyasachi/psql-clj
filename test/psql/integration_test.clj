@@ -43,3 +43,13 @@
                        {:x 42 :a [4 3 2]} {:x 42 :a [4 3 2]}])
     (is (= {:j {"x" 42 "a" [4 3 2]} :jb {"x" 42 "a" [4 3 2]}}
            (jdbc/execute-one! tx ["SELECT * FROM t"] opts)))))
+
+(deftest ^:integration enum-keyword-binding
+  (jdbc/with-transaction [tx (db) {:rollback-only true}]
+    (jdbc/execute! tx ["CREATE TYPE mood AS ENUM ('sad','ok','happy')"])
+    (jdbc/execute! tx ["CREATE TEMP TABLE feelings (m mood)"])
+    (testing "a keyword binds to an enum column by name"
+      (jdbc/execute! tx ["INSERT INTO feelings (m) VALUES (?)" :happy])
+      (is (= {:m "happy"} (jdbc/execute-one! tx ["SELECT m FROM feelings"] opts))))
+    (testing "binding via an explicit ::enum cast also works"
+      (is (= {:m "ok"} (jdbc/execute-one! tx ["SELECT ?::mood AS m" :ok] opts))))))

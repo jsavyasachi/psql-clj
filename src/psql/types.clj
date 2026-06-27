@@ -154,7 +154,16 @@
   (set-parameter [^InetAddress inet-addr ^PreparedStatement ps ^long i]
     (.setObject ps i (doto (PGobject.)
                        (.setType "inet")
-                       (.setValue (.getHostAddress inet-addr))))))
+                       (.setValue (.getHostAddress inet-addr)))))
+
+  ;; Keywords bind to enum (or other named string) columns by name: the column's
+  ;; own SQL type is used, so :happy goes into a `mood` enum as 'happy'. (Enum
+  ;; values read back as plain strings - the driver does not carry the enum type.)
+  clojure.lang.Keyword
+  (set-parameter [kw ^PreparedStatement ps ^long i]
+    (.setObject ps i (doto (PGobject.)
+                       (.setType (param-type-name ps i))
+                       (.setValue (name kw))))))
 
 ;;;;
 ;; Read side: convert SQL result values into Clojure data.
