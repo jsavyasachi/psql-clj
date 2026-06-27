@@ -1,13 +1,12 @@
-(defproject net.clojars.savya/psql-clj "2.0.0"
-  :description "PostgreSQL helpers for Clojure: environment- and .pgpass-aware connection specs, HikariCP pooling, and next.jdbc type coercion for JSON/JSONB, arrays, inet and enums. PostGIS support lives in the psql-clj-gis companion."
+(defproject net.clojars.savya/psql-clj-gis "2.0.0"
+  :description "PostGIS geometry and geography support for psql-clj: spatial constructors, GeoJSON coercion, and next.jdbc column/parameter extensions."
   :url "https://github.com/jsavyasachi/psql-clj"
   :license {:name "BSD-2-Clause"
             :url "https://opensource.org/license/bsd-2-clause"}
   :scm {:name "git" :url "https://github.com/jsavyasachi/psql-clj"}
-  :dependencies [[com.github.seancorfield/next.jdbc "1.3.1118"]
-                 [org.postgresql/postgresql "42.7.7"]
-                 [hikari-cp "4.1.0"]
-                 [cheshire "6.2.0"]]
+  :dependencies [[net.clojars.savya/psql-clj "2.0.0"]
+                 [net.postgis/postgis-jdbc "2024.1.0" :exclusions [postgresql org.postgresql/postgresql]]
+                 [prismatic/schema "1.4.1"]]
   :global-vars {*warn-on-reflection* true}
   :test-selectors {:default (complement :integration)
                    :integration :integration

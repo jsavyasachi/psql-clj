@@ -17,6 +17,12 @@
   (doto geometry
     (.setSrid (int srid))))
 
+(defn geography
+  "Tag a geometry with SRID 4326 (WGS84) so it can be stored in a PostGIS
+  `geography` column, which requires a known SRID."
+  [^Geometry geometry]
+  (with-srid! geometry 4326))
+
 (defn point
   "Make a 2D or 3D Point."
   ([x y]

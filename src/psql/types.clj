@@ -1,16 +1,17 @@
 (ns psql.types
   "Extend next.jdbc's SettableParameter and ReadableColumn protocols so that
-   PostGIS geometry, PGobject (json/jsonb), SQL arrays and inet values move
-   between Clojure data and PostgreSQL without manual wrapping."
-  (:require [psql.coerce :as coerce]
-            [next.jdbc.prepare :as prepare]
+   PGobject (json/jsonb/enum), SQL arrays and inet values move between Clojure
+   data and PostgreSQL without manual wrapping.
+
+   The map->parameter / vec->parameter / num->parameter multimethods are the
+   extension seam: companion artifacts (e.g. psql-clj-gis) add methods for their
+   own SQL types without this namespace depending on them."
+  (:require [next.jdbc.prepare :as prepare]
             [next.jdbc.result-set :as rs]
             [clojure.string :as str]
             [clojure.xml :as xml]
             [cheshire.core :as json])
   (:import [org.postgresql.util PGobject]
-           [net.postgis.jdbc.geometry Geometry]
-           [net.postgis.jdbc PGgeometryLW]
            [java.sql PreparedStatement]
            [java.net InetAddress]))
 
@@ -75,10 +76,6 @@
 
 ;; Clojure maps -> SQL value, by target column type
 (defmulti map->parameter parameter-dispatch-fn)
-
-(defmethod map->parameter :geometry
-  [m _]
-  (PGgeometryLW. ^Geometry (coerce/geojson->postgis m)))
 
 (defmethod map->parameter :json
   [m _]
@@ -157,12 +154,7 @@
   (set-parameter [^InetAddress inet-addr ^PreparedStatement ps ^long i]
     (.setObject ps i (doto (PGobject.)
                        (.setType "inet")
-                       (.setValue (.getHostAddress inet-addr)))))
-
-  ;; PostGIS geometry objects wrap into the lightweight PGgeometry.
-  Geometry
-  (set-parameter [^Geometry g ^PreparedStatement ps ^long i]
-    (.setObject ps i (PGgeometryLW. ^Geometry g))))
+                       (.setValue (.getHostAddress inet-addr))))))
 
 ;;;;
 ;; Read side: convert SQL result values into Clojure data.
@@ -209,13 +201,6 @@
   (.getValue x))
 
 (extend-protocol rs/ReadableColumn
-  ;; Return the PostGIS geometry (as GeoJSON) instead of the PGgeometry wrapper.
-  net.postgis.jdbc.PGgeometry
-  (read-column-by-label [^net.postgis.jdbc.PGgeometry v _]
-    (coerce/postgis->geojson (.getGeometry v)))
-  (read-column-by-index [^net.postgis.jdbc.PGgeometry v _ _]
-    (coerce/postgis->geojson (.getGeometry v)))
-
   ;; Parse SQLXML into a Clojure map representing the XML content.
   java.sql.SQLXML
   (read-column-by-label [^java.sql.SQLXML v _]

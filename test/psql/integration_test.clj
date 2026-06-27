@@ -1,5 +1,5 @@
 (ns psql.integration-test
-  "End-to-end tests against a live PostgreSQL (with the postgis extension).
+  "End-to-end tests against a live PostgreSQL.
 
    Tagged :integration so they are excluded from the default `lein test` run.
    Run them with `lein test :integration` against a database described by the
@@ -7,7 +7,6 @@
    PGPASSWORD)."
   (:require [clojure.test :refer [deftest is testing]]
             [psql.core :as pg]
-            [psql.spatial :as st]
             [psql.types]
             [next.jdbc :as jdbc]
             [next.jdbc.result-set :as rs])
@@ -44,12 +43,3 @@
                        {:x 42 :a [4 3 2]} {:x 42 :a [4 3 2]}])
     (is (= {:j {"x" 42 "a" [4 3 2]} :jb {"x" 42 "a" [4 3 2]}}
            (jdbc/execute-one! tx ["SELECT * FROM t"] opts)))))
-
-(deftest ^:integration postgis-geometry-roundtrip
-  (jdbc/with-transaction [tx (db) {:rollback-only true}]
-    (jdbc/execute! tx ["CREATE EXTENSION IF NOT EXISTS postgis"])
-    (jdbc/execute! tx ["CREATE TEMP TABLE g (geom geometry)"])
-    (jdbc/execute! tx ["INSERT INTO g (geom) VALUES (?)" (st/point [1 2])])
-    (testing "a geometry column reads back as GeoJSON"
-      (is (= {:type :Point :coordinates [1.0 2.0]}
-             (:geom (jdbc/execute-one! tx ["SELECT geom FROM g"] opts)))))))

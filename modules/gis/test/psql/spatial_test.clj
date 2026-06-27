@@ -22,3 +22,7 @@
 (deftest srid-roundtrip
   (let [p (st/with-srid! (st/point [1 2]) 4326)]
     (is (= 4326 (st/srid p)))))
+
+(deftest geography-tags-wgs84
+  (testing "geography helper sets SRID 4326 for geography columns"
+    (is (= 4326 (st/srid (st/geography (st/point [1 2])))))))
