@@ -49,18 +49,22 @@
     PGUSER (assoc :user PGUSER)))
 
 (defn spec
-  "Create database spec for PostgreSQL. Uses PG* environment variables by default
-  and acceps options in the form:
-  (pg-spec :dbname ... :host ... :port ... :user ... :password ...)"
+  "Create a database spec for PostgreSQL. Uses PG* environment variables by
+  default and accepts overrides in the form:
+  (spec :dbname ... :host ... :port ... :user ... :password ...)
+
+  The password is resolved with libpq-style precedence: an explicit :password
+  option, then the PGPASSWORD environment variable, then a ~/.pgpass match."
   [& {:keys [password] :as opts}]
   {:post [(contains? % :dbname)
           (contains? % :user)]}
-  (let [spec-opts (select-keys opts [:dbname :host :port :user])
+  (let [env (getenv->map (System/getenv))
+        spec-opts (select-keys opts [:dbname :host :port :user])
         extra-opts (dissoc opts :dbname :host :port :user :password)
         db-spec (merge (default-spec)
-                       (env-spec (getenv->map (System/getenv)))
+                       (env-spec env)
                        spec-opts)
-        password (or password (pgpass/pgpass-lookup db-spec))]
+        password (or password (:PGPASSWORD env) (pgpass/pgpass-lookup db-spec))]
     (cond-> (merge extra-opts db-spec)
       password (assoc :password password))))
 
