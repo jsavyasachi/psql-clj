@@ -5,7 +5,7 @@
             :url "https://opensource.org/license/bsd-2-clause"}
   :scm {:name "git" :url "https://github.com/jsavyasachi/psql-clj"}
   :dependencies [[net.clojars.savya/psql-clj "2.0.0"]
-                 [software.amazon.awssdk/rds "2.46.7"]]
+                 [software.amazon.awssdk/rds "2.46.17"]]
   :global-vars {*warn-on-reflection* true}
   :profiles {:provided {:dependencies [[org.clojure/clojure "1.12.0"]]}
              :dev {:dependencies [[org.clojure/clojure "1.12.0"]]}

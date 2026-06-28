@@ -5,7 +5,7 @@
             :url "https://opensource.org/license/bsd-2-clause"}
   :scm {:name "git" :url "https://github.com/jsavyasachi/psql-clj"}
   :dependencies [[net.clojars.savya/psql-clj "2.0.0"]
-                 [net.postgis/postgis-jdbc "2024.1.0" :exclusions [postgresql org.postgresql/postgresql]]
+                 [net.postgis/postgis-jdbc "2025.1.1" :exclusions [postgresql org.postgresql/postgresql]]
                  [prismatic/schema "1.4.1"]]
   :global-vars {*warn-on-reflection* true}
   :test-selectors {:default (complement :integration)
