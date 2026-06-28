@@ -1,4 +1,4 @@
-(defproject net.clojars.savya/psql-clj "2.0.0"
+(defproject net.clojars.savya/psql-clj "2.0.1"
   :description "PostgreSQL helpers for Clojure: environment- and .pgpass-aware connection specs, HikariCP pooling, and next.jdbc type coercion for JSON/JSONB, arrays, inet and enums. PostGIS support lives in the psql-clj-gis companion."
   :url "https://github.com/jsavyasachi/psql-clj"
   :license {:name "BSD-2-Clause"

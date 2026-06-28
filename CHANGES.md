@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.1] - 2026-06-27
+
+### Changed
+- Dependency currency (via antq): `postgis-jdbc` 2024.1.0 → 2025.1.1,
+  `postgresql` 42.7.7 → 42.7.11, AWS SDK `rds` 2.46.7 → 2.46.17. Validated
+  against live PostGIS; the postgis-jdbc year bump did not change packages.
+
 ## [2.0.0] - 2026-06-27
 
 Modular split plus new features, addressing the upstream issue/PR backlog.
@@ -57,5 +64,6 @@ republished as `net.clojars.savya/psql-clj`.
 - Unused `clj-time` and `org.clojure/java.data` dependencies.
 - Travis configuration, `deps.edn` and `Makefile`.
 
+[2.0.1]: https://github.com/jsavyasachi/psql-clj/releases/tag/v2.0.1
 [2.0.0]: https://github.com/jsavyasachi/psql-clj/releases/tag/v2.0.0
 [1.0.0]: https://github.com/jsavyasachi/psql-clj/releases/tag/v1.0.0
