@@ -5,7 +5,7 @@
             :url "https://opensource.org/license/bsd-2-clause"}
   :scm {:name "git" :url "https://github.com/jsavyasachi/psql-clj"}
   :dependencies [[com.github.seancorfield/next.jdbc "1.3.1118"]
-                 [org.postgresql/postgresql "42.7.11"]
+                 [org.postgresql/postgresql "42.7.12"]
                  [hikari-cp "4.1.0"]
                  [cheshire "6.2.0"]]
   :global-vars {*warn-on-reflection* true}
