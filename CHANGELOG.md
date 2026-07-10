@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+### Changed
+- Reorganized the README into a cljdoc article tree under `doc/` (Connecting, Type conversion, PostGIS, RDS IAM). Documentation content is unchanged; ships with the next release.
+
 All notable changes to this project are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.0.1] - 2026-06-27
