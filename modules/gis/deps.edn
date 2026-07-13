@@ -1,7 +1,7 @@
 {:paths ["src"]
 
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
-        net.clojars.savya/psql-clj {:mvn/version "2.0.1"}
+        net.clojars.savya/psql-clj {:mvn/version "2.0.2"}
         net.postgis/postgis-jdbc {:mvn/version "2025.1.1"
                                   :exclusions [postgresql/postgresql
                                                org.postgresql/postgresql]}

@@ -42,11 +42,17 @@ jobs:
       - name: Test
         run: clojure -M:test
 
-      - name: Deploy to Clojars
+      # Lockstep 3-artifact release. Companions declare a :mvn/version dep on core,
+      # so install core to ~/.m2 first, then deploy core -> gis -> aws to Clojars.
+      - name: Deploy core + companions to Clojars
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
           CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
-        run: clojure -T:build deploy
+        run: |
+          clojure -T:build install          # core -> ~/.m2 (companions resolve this)
+          clojure -T:build deploy           # core  -> Clojars
+          (cd modules/gis && clojure -T:build deploy)   # psql-clj-gis -> Clojars
+          (cd modules/aws && clojure -T:build deploy)   # psql-clj-aws -> Clojars
 
       - name: Create GitHub Release
         if: github.ref_type == 'tag'

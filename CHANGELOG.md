@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.0.2] - 2026-07-12
 ### Changed
 - Migrate the build to deps.edn and tools.build, with Leiningen supported via lein-tools-deps.
 - Reorganized the README into a cljdoc article tree under `doc/` (Connecting, Type conversion, PostGIS, RDS IAM). Documentation content is unchanged; ships with the next release.
