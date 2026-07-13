@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Changed
+- Migrate the build to deps.edn and tools.build, with Leiningen supported via lein-tools-deps.
 - Reorganized the README into a cljdoc article tree under `doc/` (Connecting, Type conversion, PostGIS, RDS IAM). Documentation content is unchanged; ships with the next release.
 
 All notable changes to this project are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project adheres to [Semantic Versioning](https://semver.org/).

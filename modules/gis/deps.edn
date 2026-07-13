@@ -1,0 +1,24 @@
+{:paths ["src"]
+
+ :deps {org.clojure/clojure {:mvn/version "1.12.0"}
+        net.clojars.savya/psql-clj {:mvn/version "2.0.1"}
+        net.postgis/postgis-jdbc {:mvn/version "2025.1.1"
+                                  :exclusions [postgresql/postgresql
+                                               org.postgresql/postgresql]}
+        prismatic/schema {:mvn/version "1.4.1"}}
+
+ :aliases
+ {:test
+  {:extra-paths ["test"]
+   :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
+                org.slf4j/slf4j-nop {:mvn/version "2.0.18"}}
+   :main-opts ["-m" "kaocha.runner"]}
+
+  :1.10 {:override-deps {org.clojure/clojure {:mvn/version "1.10.3"}}}
+  :1.11 {:override-deps {org.clojure/clojure {:mvn/version "1.11.4"}}}
+  :1.12 {:override-deps {org.clojure/clojure {:mvn/version "1.12.0"}}}
+
+  :build
+  {:deps {io.github.clojure/tools.build {:mvn/version "0.10.14"}
+          slipset/deps-deploy {:mvn/version "0.2.5"}}
+   :ns-default build}}}
