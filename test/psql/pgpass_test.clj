@@ -31,7 +31,11 @@
   (testing "blank and comment lines are ignored"
     (is (nil? (pgpass/parse-pgpass-line "")))
     (is (nil? (pgpass/parse-pgpass-line "   ")))
-    (is (nil? (pgpass/parse-pgpass-line "  # comment")))))
+    (is (nil? (pgpass/parse-pgpass-line "  # comment")))
+    ;; a commented-out entry has 5 colon fields; it must still be skipped as a
+    ;; comment, not parsed into a record.
+    (is (nil? (pgpass/parse-pgpass-line "#localhost:5432:mydb:me:secret")))
+    (is (nil? (pgpass/parse-pgpass-line "  # localhost:5432:mydb:me:secret")))))
 
 (deftest pgpass-matches?
   (testing "all-wildcard line matches and yields the password"

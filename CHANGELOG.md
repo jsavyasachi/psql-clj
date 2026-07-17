@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.1.1] - 2026-07-16
+### Fixed
+- `.pgpass` comment lines are now skipped by the intended leading-`#` rule rather
+  than only by an incidental field-count check, so a commented-out entry with five
+  colon fields can never be parsed into a record (`psql.pgpass`).
+
 ## [2.1.0] - 2026-07-16
 
 Parity pass over pgjdbc 42.7.13 + libpq 16/17 semantics + next.jdbc. All additions are backward

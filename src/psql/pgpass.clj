@@ -18,7 +18,7 @@
   "The .pgpass file has lines of format: hostname:port:database:username:password.
   Return a map of fields {:pg-hostname \"*\" ...}, or nil for an ignored line."
   [s]
-  (when-not (or (str/blank? s) (re-find #"^\\s*#" s))
+  (when-not (or (str/blank? s) (re-find #"^\s*#" s))
     (let [fields (loop [remaining (seq s)
                         field (StringBuilder.)
                         result []]

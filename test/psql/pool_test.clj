@@ -59,7 +59,7 @@
         (is (re-find (re-pattern (java.util.regex.Pattern/quote parameter)) url)
             parameter))))
   (testing "an IAM-shaped spec keeps its mandatory TLS mode"
-    (is (re-find #"(?:\\?|&)sslmode=require(?:&|$)"
+    (is (re-find #"[?&]sslmode=require(?:&|$)"
                  (:jdbc-url
                   (pool/db-spec->pool-config
                    {:dbtype "postgresql" :host "rds.example.com" :port 5432

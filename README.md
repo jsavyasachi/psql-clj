@@ -30,7 +30,7 @@ has no PostGIS or AWS dependencies.
 deps.edn:
 
 ```clj
-net.clojars.savya/psql-clj     {:mvn/version "2.1.0"}
+net.clojars.savya/psql-clj     {:mvn/version "2.1.1"}
 net.clojars.savya/psql-clj-gis {:mvn/version "2.0.2"}  ;; optional, for PostGIS
 net.clojars.savya/psql-clj-aws {:mvn/version "2.0.2"}  ;; optional, for RDS IAM auth
 ```
@@ -38,7 +38,7 @@ net.clojars.savya/psql-clj-aws {:mvn/version "2.0.2"}  ;; optional, for RDS IAM 
 Leiningen:
 
 ```clj
-[net.clojars.savya/psql-clj "2.1.0"]
+[net.clojars.savya/psql-clj "2.1.1"]
 [net.clojars.savya/psql-clj-gis "2.0.2"]   ;; optional, for PostGIS
 [net.clojars.savya/psql-clj-aws "2.0.2"]   ;; optional, for RDS IAM auth
 ```
