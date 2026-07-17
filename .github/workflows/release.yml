@@ -42,17 +42,36 @@ jobs:
       - name: Test
         run: clojure -M:test
 
-      # Lockstep 3-artifact release. Companions declare a :mvn/version dep on core,
-      # so install core to ~/.m2 first, then deploy core -> gis -> aws to Clojars.
+      # 3-artifact release. Companions declare a :mvn/version dep on core, so core
+      # is always installed to ~/.m2 first (companions resolve it). Clojars is
+      # immutable: redeploying an already-published non-SNAPSHOT version 403s. So
+      # each artifact is deployed only when its build.clj version is not yet on
+      # Clojars - a core-only bump, a companion-only bump, and re-running the same
+      # tag are all idempotent and stay green instead of failing on a redeploy.
       - name: Deploy core + companions to Clojars
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
           CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
         run: |
+          set -euo pipefail
+
+          deploy_if_new () {
+            local artifact="$1" dir="$2" ver url code
+            ver=$(sed -n 's/.*def version "\([^"]*\)".*/\1/p' "$dir/build.clj")
+            url="https://repo.clojars.org/net/clojars/savya/${artifact}/${ver}/${artifact}-${ver}.jar"
+            code=$(curl -fsS -o /dev/null -w '%{http_code}' "$url" || true)
+            if [ "$code" = "200" ]; then
+              echo "::notice::${artifact} ${ver} already on Clojars; skipping"
+            else
+              echo "Deploying ${artifact} ${ver} (Clojars returned ${code})"
+              (cd "$dir" && clojure -T:build deploy)
+            fi
+          }
+
           clojure -T:build install          # core -> ~/.m2 (companions resolve this)
-          clojure -T:build deploy           # core  -> Clojars
-          (cd modules/gis && clojure -T:build deploy)   # psql-clj-gis -> Clojars
-          (cd modules/aws && clojure -T:build deploy)   # psql-clj-aws -> Clojars
+          deploy_if_new psql-clj     .
+          deploy_if_new psql-clj-gis modules/gis
+          deploy_if_new psql-clj-aws modules/aws
 
       - name: Create GitHub Release
         if: github.ref_type == 'tag'
