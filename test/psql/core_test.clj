@@ -20,6 +20,44 @@
     (is (= {:dbname "d"} (pg/env-spec {:PGDATABASE "d"})))
     (is (= {} (pg/env-spec {})))))
 
+(deftest env-spec-pgjdbc-properties-test
+  (is (= {:sslmode "verify-full"
+          :sslcert "/cert.pem"
+          :sslkey "/key.pem"
+          :sslrootcert "/root.pem"
+          :ApplicationName "psql-clj-test"
+          :connectTimeout "9"
+          :options "-c statement_timeout=5000"
+          :targetServerType "preferSecondary"
+          :channelBinding "require"
+          :gssEncMode "prefer"
+          :gsslib "gssapi"
+          :kerberosServerName "postgres"
+          :requireAuth "scram-sha-256"
+          :sslNegotiation "direct"
+          :loadBalanceHosts "true"}
+         (pg/env-spec
+          {:PGSSLMODE "verify-full"
+           :PGSSLCERT "/cert.pem"
+           :PGSSLKEY "/key.pem"
+           :PGSSLROOTCERT "/root.pem"
+           :PGAPPNAME "psql-clj-test"
+           :PGCONNECT_TIMEOUT "9"
+           :PGOPTIONS "-c statement_timeout=5000"
+           :PGTARGETSESSIONATTRS "prefer-standby"
+           :PGCHANNELBINDING "require"
+           :PGGSSENCMODE "prefer"
+           :PGGSSLIB "gssapi"
+           :PGKRBSRVNAME "postgres"
+           :PGREQUIREAUTH "scram-sha-256"
+           :PGSSLNEGOTIATION "direct"
+           :PGLOADBALANCEHOSTS "true"}))))
+
+(deftest target-session-attrs-translation-test
+  (is (= ["any" "primary" "secondary" "primary" "secondary" "preferSecondary"]
+         (mapv #(-> {:PGTARGETSESSIONATTRS %} pg/env-spec :targetServerType)
+               ["any" "read-write" "read-only" "primary" "standby" "prefer-standby"]))))
+
 (deftest spec-password-precedence
   (testing "explicit :password beats PGPASSWORD and ~/.pgpass"
     (with-redefs [pg/getenv->map (fn [& _] {:PGDATABASE "d" :PGUSER "u" :PGPASSWORD "envpw"})

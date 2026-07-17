@@ -38,15 +38,45 @@
      :dbname username}))
 
 (defn env-spec
-  "Get db spec by reading PG* variables from the environment."
-  [{:keys [PGDATABASE PGHOST PGPORT PGUSER] :as env}]
+  "Get a db spec from libpq PG* environment variables, translated to pgjdbc
+  property names where needed. PGHOSTADDR, PGCLIENTENCODING, PGREQUIREPEER,
+  PGSSLCRL/SNI/min-max-proto, and the Unix-socket default host are unsupported."
+  [{:keys [PGDATABASE PGHOST PGPORT PGUSER PGTARGETSESSIONATTRS] :as env}]
   {:pre [(map? env)]
    :post [(map? %)]}
-  (cond-> {}
-    PGDATABASE (assoc :dbname PGDATABASE)
-    PGHOST (assoc :host PGHOST)
-    PGPORT (assoc :port PGPORT)
-    PGUSER (assoc :user PGUSER)))
+  (let [env-properties {:PGSSLMODE :sslmode
+                        :PGSSLCERT :sslcert
+                        :PGSSLKEY :sslkey
+                        :PGSSLROOTCERT :sslrootcert
+                        :PGAPPNAME :ApplicationName
+                        :PGCONNECT_TIMEOUT :connectTimeout
+                        :PGOPTIONS :options
+                        :PGCHANNELBINDING :channelBinding
+                        :PGGSSENCMODE :gssEncMode
+                        :PGGSSLIB :gsslib
+                        :PGKRBSRVNAME :kerberosServerName
+                        :PGREQUIREAUTH :requireAuth
+                        :PGSSLNEGOTIATION :sslNegotiation
+                        :PGLOADBALANCEHOSTS :loadBalanceHosts}
+        target-server-types {"any" "any"
+                             "read-write" "primary"
+                             "read-only" "secondary"
+                             "primary" "primary"
+                             "standby" "secondary"
+                             "prefer-standby" "preferSecondary"}]
+    (cond-> (reduce-kv (fn [spec env-key property-key]
+                         (if-let [value (get env env-key)]
+                           (assoc spec property-key value)
+                           spec))
+                       {}
+                       env-properties)
+      PGDATABASE (assoc :dbname PGDATABASE)
+      PGHOST (assoc :host PGHOST)
+      PGPORT (assoc :port PGPORT)
+      PGUSER (assoc :user PGUSER)
+      PGTARGETSESSIONATTRS
+      (assoc :targetServerType
+             (get target-server-types PGTARGETSESSIONATTRS PGTARGETSESSIONATTRS)))))
 
 (defn spec
   "Create a database spec for PostgreSQL. Uses PG* environment variables by
