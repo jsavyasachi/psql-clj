@@ -1,5 +1,6 @@
 (ns psql.service-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.java.io :as io]
+            [clojure.test :refer [deftest is testing]]
             [psql.service :as service]))
 
 (deftest resolve-service-test
@@ -31,3 +32,18 @@
                 {:PGSERVICEFILE (.getAbsolutePath service-file)}))))
       (finally
         (.delete service-file)))))
+
+(deftest resolve-service-from-system-config-directory-test
+  (let [directory (doto (java.io.File/createTempFile "psql-clj-service-dir-" "")
+                    (.delete)
+                    (.mkdir))
+        service-file (io/file directory "pg_service.conf")]
+    (try
+      (spit service-file "[system]\nhost=system-host\ndbname=system-db\nuser=system-user\n")
+      (is (= {:host "system-host" :dbname "system-db" :user "system-user"}
+             (service/resolve-service
+              "system"
+              {:PGSYSCONFDIR (.getAbsolutePath directory)})))
+      (finally
+        (.delete service-file)
+        (.delete directory)))))
