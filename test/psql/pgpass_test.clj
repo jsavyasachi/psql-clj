@@ -1,6 +1,20 @@
 (ns psql.pgpass-test
-  (:require [clojure.test :refer [deftest is testing]]
-            [psql.pgpass :as pgpass]))
+  (:require [clojure.java.io :as io]
+            [clojure.test :refer [deftest is testing]]
+            [psql.pgpass :as pgpass])
+  (:import [java.nio.file Files]
+           [java.nio.file.attribute PosixFilePermission]))
+
+(def ^:private owner-only-permissions
+  #{PosixFilePermission/OWNER_READ PosixFilePermission/OWNER_WRITE})
+
+(defn- temp-pgpass
+  [contents permissions]
+  (let [passfile (java.io.File/createTempFile "pgpass-" ".conf")]
+    (.deleteOnExit passfile)
+    (spit passfile contents)
+    (Files/setPosixFilePermissions (.toPath passfile) permissions)
+    passfile))
 
 (deftest parse-pgpass-line
   (is (= {:pg-hostname "localhost" :pg-port "5432" :pg-database "mydb"
@@ -46,3 +60,42 @@
               {:host "h" :port "5432" :dbname "d" :user "u"}
               {:pg-hostname "*" :pg-port "*" :pg-database "*"
                :pg-username "someone-else" :pg-password "pw"})))))
+
+(deftest default-pgpass-file
+  (testing "PGPASSFILE takes precedence"
+    (is (= (io/file "/custom/passfile")
+           (pgpass/default-pgpass-file {"PGPASSFILE" "/custom/passfile"}
+                                       "Linux" "/home/me"))))
+  (testing "POSIX default"
+    (is (= (io/file "/home/me" ".pgpass")
+           (pgpass/default-pgpass-file {} "Linux" "/home/me"))))
+  (testing "Windows default"
+    (is (= (io/file "C:\\Users\\me\\AppData\\Roaming" "postgresql" "pgpass.conf")
+           (pgpass/default-pgpass-file
+            {"APPDATA" "C:\\Users\\me\\AppData\\Roaming"}
+            "Windows 11" "C:\\Users\\me")))))
+
+(deftest read-and-lookup-pgpass
+  (let [passfile (temp-pgpass
+                  (str "\n  # ignored\nmalformed\n"
+                       "localhost:5432:mydb:me:colon\\:and\\\\slash\n")
+                  owner-only-permissions)]
+    (testing "explicit passfile lookup skips ignored records and preserves escapes"
+      (is (= "colon:and\\slash"
+             (pgpass/pgpass-lookup
+              {:host "localhost" :port 5432 :dbname "mydb" :user "me"}
+              passfile))))
+    (testing "read-pgpass never emits partial candidates"
+      (is (= 1 (count (pgpass/read-pgpass passfile)))))))
+
+(deftest insecure-pgpass-is-ignored
+  (doseq [permission [PosixFilePermission/GROUP_READ
+                      PosixFilePermission/GROUP_WRITE
+                      PosixFilePermission/OTHERS_READ
+                      PosixFilePermission/OTHERS_WRITE]]
+    (let [passfile (temp-pgpass
+                    "localhost:5432:mydb:me:exposed\n"
+                    (conj owner-only-permissions permission))]
+      (is (nil? (pgpass/pgpass-lookup
+                 {:host "localhost" :port 5432 :dbname "mydb" :user "me"}
+                 passfile))))))
