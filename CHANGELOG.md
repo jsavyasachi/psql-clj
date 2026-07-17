@@ -1,5 +1,41 @@
 # Changelog
 
+## [2.1.0] - 2026-07-16
+
+Parity pass over pgjdbc 42.7.13 + libpq 16/17 semantics + next.jdbc. All additions are backward
+compatible.
+
+### Added
+- **Type read/write symmetry** (`psql.types`): built-in geometric types
+  (point/box/circle/line/lseg/path/polygon), `interval`, and `money` now read back into Clojure data
+  instead of raw strings, symmetric with the existing write constructors.
+- **Range and multirange coercion**: `int4range`/`int8range`/`numrange`/`tsrange`/`tstzrange`/`daterange`
+  and their multirange forms round-trip as maps, modeling inclusive/exclusive and unbounded bounds and
+  the empty range.
+- **`inet`/`cidr`** now read back (IPv6 included) with address family and prefix preserved.
+- **Recursive multi-dimensional / nested SQL arrays** round-trip on both read and write.
+- **JSON/JSONB scalar writes** via `psql.types/json` / `jsonb` (strings, numbers, booleans, JSON null),
+  complementing the existing map/vector coercion.
+- **`PGSERVICE` / `pg_service.conf`** (`psql.service`): connection service files resolve through pgjdbc's
+  own parser, honoring `PGSERVICEFILE`/`PGSYSCONFDIR`, with libpq precedence (explicit options > service >
+  `PG*` env > defaults).
+- **libpq environment variables**: `spec` now maps `PGSSLMODE`, `PGSSLCERT`/`PGSSLKEY`/`PGSSLROOTCERT`,
+  `PGAPPNAME`, `PGCONNECT_TIMEOUT`, `PGOPTIONS`, `PGTARGETSESSIONATTRS`, `PGCHANNELBINDING`, `PGGSSENCMODE`
+  and related vars to their pgjdbc properties.
+- **`COPY` streaming** (`psql.copy`): thin `copy-in` / `copy-out` over pgjdbc's `CopyManager`.
+- **`LISTEN`/`NOTIFY`** (`psql.notify`): `listen!` / `unlisten!` / `notify!` with injection-safe channel
+  validation, plus `get-notifications` polling.
+
+### Fixed
+- **Pooled connections no longer drop pgjdbc properties.** `db-spec->pool-config` previously kept only
+  host/port/dbname/user/password and silently discarded everything else, so a pooled spec lost `sslmode`,
+  `ApplicationName`, timeouts, and more - including the `sslmode=require` that `psql-clj-aws`' IAM specs
+  depend on. All non-structural spec keys now flow through to the connection, with multi-host/failover and
+  prebuilt/`service` URLs supported and URL components safely encoded.
+- **`.pgpass` now follows libpq rules** (`psql.pgpass`): honors `PGPASSFILE`, splits only on unescaped
+  colons and unescapes `\:`/`\\`, skips comment/blank/malformed lines, normalizes port matching, and
+  ignores a group/world-readable password file (a credential-exposure fix) on POSIX filesystems.
+
 ## [2.0.2] - 2026-07-12
 ### Changed
 - Migrate the build to deps.edn and tools.build, with Leiningen supported via lein-tools-deps.

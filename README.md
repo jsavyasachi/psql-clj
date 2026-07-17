@@ -4,7 +4,7 @@
 [![cljdoc](https://cljdoc.org/badge/net.clojars.savya/psql-clj)](https://cljdoc.org/d/net.clojars.savya/psql-clj)
 [![test](https://github.com/jsavyasachi/psql-clj/actions/workflows/test.yml/badge.svg)](https://github.com/jsavyasachi/psql-clj/actions/workflows/test.yml)
 
-PostgreSQL helpers for Clojure: environment- and `.pgpass`-aware connection specs, HikariCP pooling, and [next.jdbc](https://github.com/seancorfield/next-jdbc) type coercion for JSON/JSONB, arrays, `inet`, and PostGIS geometry.
+PostgreSQL helpers for Clojure: `PG*`-, `PGSERVICE`- and `.pgpass`-aware connection specs, HikariCP pooling that preserves every pgjdbc connection property, [next.jdbc](https://github.com/seancorfield/next-jdbc) type coercion (JSON/JSONB, ranges, arrays, `inet`/`cidr`, geometry, interval, money, enums - read and write), and thin `COPY` and `LISTEN`/`NOTIFY` helpers. PostGIS geometry lives in the `psql-clj-gis` companion.
 
 ## Stack
 
@@ -23,24 +23,24 @@ has no PostGIS or AWS dependencies.
 
 | Artifact | For |
 |---|---|
-| `net.clojars.savya/psql-clj` | connection specs, pooling, json/jsonb, arrays, inet, enums |
+| `net.clojars.savya/psql-clj` | connection specs (`PG*`/`PGSERVICE`/`.pgpass`), pooling, json/jsonb, ranges, arrays, inet/cidr, geometry, interval, money, enums, COPY, LISTEN/NOTIFY |
 | `net.clojars.savya/psql-clj-gis` | PostGIS geometry + geography (pulls `postgis-jdbc`) |
 | `net.clojars.savya/psql-clj-aws` | RDS/Aurora IAM authentication (pulls the AWS SDK) |
 
 deps.edn:
 
 ```clj
-net.clojars.savya/psql-clj     {:mvn/version "2.0.1"}
-net.clojars.savya/psql-clj-gis {:mvn/version "2.0.0"}  ;; optional, for PostGIS
-net.clojars.savya/psql-clj-aws {:mvn/version "2.0.0"}  ;; optional, for RDS IAM auth
+net.clojars.savya/psql-clj     {:mvn/version "2.1.0"}
+net.clojars.savya/psql-clj-gis {:mvn/version "2.0.2"}  ;; optional, for PostGIS
+net.clojars.savya/psql-clj-aws {:mvn/version "2.0.2"}  ;; optional, for RDS IAM auth
 ```
 
 Leiningen:
 
 ```clj
-[net.clojars.savya/psql-clj "2.0.1"]
-[net.clojars.savya/psql-clj-gis "2.0.0"]   ;; optional, for PostGIS
-[net.clojars.savya/psql-clj-aws "2.0.0"]   ;; optional, for RDS IAM auth
+[net.clojars.savya/psql-clj "2.1.0"]
+[net.clojars.savya/psql-clj-gis "2.0.2"]   ;; optional, for PostGIS
+[net.clojars.savya/psql-clj-aws "2.0.2"]   ;; optional, for RDS IAM auth
 ```
 
 ## Documentation
@@ -49,6 +49,9 @@ Leiningen:
 - [Type conversion](doc/type-conversion.md)
 - [PostGIS (psql-clj-gis)](doc/postgis.md)
 - [RDS IAM authentication (psql-clj-aws)](doc/rds-iam.md)
+
+`COPY` streaming (`psql.copy`) and `LISTEN`/`NOTIFY` (`psql.notify`) are documented in their
+namespace docstrings on [cljdoc](https://cljdoc.org/d/net.clojars.savya/psql-clj).
 
 ## Development
 
