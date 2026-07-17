@@ -1,7 +1,8 @@
 (ns psql.core-test
   (:require [clojure.test :refer [deftest is testing]]
             [psql.core :as pg]
-            [psql.pgpass :as pgpass])
+            [psql.pgpass :as pgpass]
+            [psql.service :as service])
   (:import [org.postgresql.geometric PGpoint PGbox PGcircle PGline PGlseg
             PGpath PGpolygon]
            [org.postgresql.util PGInterval PGmoney PGobject]))
@@ -71,6 +72,63 @@
     (with-redefs [pg/getenv->map (fn [& _] {:PGDATABASE "d" :PGUSER "u"})
                   pgpass/pgpass-lookup (fn [_] "filepw")]
       (is (= "filepw" (:password (pg/spec)))))))
+
+(deftest spec-service-precedence-test
+  (let [resolved-service (atom nil)
+        env {:PGSERVICE "environment-service"
+             :PGDATABASE "environment-db"
+             :PGHOST "environment-host"
+             :PGPORT "5433"
+             :PGUSER "environment-user"
+             :PGPASSWORD "environment-password"
+             :PGSSLMODE "require"}
+        service-spec {:dbname "service-db"
+                      :host "service-host"
+                      :user "service-user"
+                      :password "service-password"
+                      :sslmode "verify-ca"}]
+    (with-redefs [service/resolve-service
+                  (fn [service-name service-env]
+                    (reset! resolved-service [service-name service-env])
+                    service-spec)
+                  pgpass/pgpass-lookup (fn [_] "pgpass-password")]
+      (testing "service values beat environment defaults"
+        (is (= {:dbtype "postgresql"
+                :dbname "service-db"
+                :host "service-host"
+                :port "5433"
+                :user "service-user"
+                :password "service-password"
+                :sslmode "verify-ca"}
+               (pg/spec :env env)))
+        (is (= ["environment-service" env] @resolved-service)))
+      (testing "explicit values and service selection beat service and environment"
+        (is (= {:dbtype "postgresql"
+                :dbname "explicit-db"
+                :host "explicit-host"
+                :port "5433"
+                :user "service-user"
+                :password "explicit-password"
+                :sslmode "verify-full"}
+               (pg/spec :env env
+                        :service "explicit-service"
+                        :dbname "explicit-db"
+                        :host "explicit-host"
+                        :password "explicit-password"
+                        :sslmode "verify-full")))
+        (is (= ["explicit-service" env] @resolved-service))))))
+
+(deftest spec-with-explicit-env-map-test
+  (with-redefs [pgpass/pgpass-lookup (fn [_] nil)]
+    (is (= {:dbtype "postgresql"
+            :dbname "db"
+            :user "user"
+            :host "host"
+            :password "password"}
+           (pg/spec :env {:PGDATABASE "db"
+                          :PGUSER "user"
+                          :PGHOST "host"
+                          :PGPASSWORD "password"})))))
 
 (deftest default-spec-test
   (let [s (pg/default-spec)]

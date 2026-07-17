@@ -4,6 +4,7 @@
   (:require [psql.types]
             [psql.pool :refer [pooled-db] :as pool]
             [psql.pgpass :as pgpass]
+            [psql.service :as service]
             [next.jdbc :as jdbc])
   (:import org.postgresql.util.PGobject
            org.postgresql.util.PGmoney
@@ -79,23 +80,28 @@
              (get target-server-types PGTARGETSESSIONATTRS PGTARGETSESSIONATTRS)))))
 
 (defn spec
-  "Create a database spec for PostgreSQL. Uses PG* environment variables by
-  default and accepts overrides in the form:
+  "Create a PostgreSQL database spec with libpq-style layering: explicit
+  options override a :service/PGSERVICE definition, which overrides ordinary
+  PG* environment values, which override built-in defaults. Accepts overrides:
   (spec :dbname ... :host ... :port ... :user ... :password ...)
 
-  The password is resolved with libpq-style precedence: an explicit :password
-  option, then the PGPASSWORD environment variable, then a ~/.pgpass match."
-  [& {:keys [password] :as opts}]
+  Password precedence follows the same layers, then falls back to ~/.pgpass.
+  Pass :env with a plain environment map for deterministic use in tests."
+  [& {:keys [password service env] :as opts}]
   {:post [(contains? % :dbname)
           (contains? % :user)]}
-  (let [env (getenv->map (System/getenv))
-        spec-opts (select-keys opts [:dbname :host :port :user])
-        extra-opts (dissoc opts :dbname :host :port :user :password)
+  (let [env (getenv->map (or env (System/getenv)))
+        service-spec (service/resolve-service (or service (:PGSERVICE env)) env)
+        explicit-opts (dissoc opts :password :service :env)
         db-spec (merge (default-spec)
                        (env-spec env)
-                       spec-opts)
-        password (or password (:PGPASSWORD env) (pgpass/pgpass-lookup db-spec))]
-    (cond-> (merge extra-opts db-spec)
+                       service-spec
+                       explicit-opts)
+        password (or password
+                     (:password service-spec)
+                     (:PGPASSWORD env)
+                     (pgpass/pgpass-lookup db-spec))]
+    (cond-> (dissoc db-spec :password)
       password (assoc :password password))))
 
 (defn pool
