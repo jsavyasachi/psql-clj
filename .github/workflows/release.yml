@@ -39,15 +39,22 @@ jobs:
             exit 1
           fi
 
-      - name: Verify README install coordinate matches version
+      - name: Verify README install coordinates match versions
         if: github.ref_type == 'tag'
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          LIB=$(grep -oE "net\.clojars\.[^ ')]+" build.clj | head -1)
-          if ! grep -qF "$LIB {:mvn/version \"$TAG\"}" README.md; then
-            echo "::error::README.md is missing install coordinate: $LIB {:mvn/version \"$TAG\"}"
-            exit 1
-          fi
+          check () {
+            local artifact="$1" dir="$2" ver lib
+            ver=$(sed -n 's/.*def version "\([^"]*\)".*/\1/p' "$dir/build.clj")
+            lib=$(grep -oE "net\.clojars\.[^ ')]+" "$dir/build.clj" | head -1)
+            if ! sed 's/  */ /g' README.md | grep -qF "$lib {:mvn/version \"$ver\"}"; then
+              echo "::error::README.md is missing install coordinate: $lib {:mvn/version \"$ver\"}"
+              exit 1
+            fi
+          }
+          check psql-clj     .
+          check psql-clj-gis modules/gis
+          check psql-clj-aws modules/aws
+
 
       - name: Test
         run: clojure -M:test
