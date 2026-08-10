@@ -32,8 +32,7 @@
     (is (nil? (pgpass/parse-pgpass-line "")))
     (is (nil? (pgpass/parse-pgpass-line "   ")))
     (is (nil? (pgpass/parse-pgpass-line "  # comment")))
-    ;; a commented-out entry has 5 colon fields; it must still be skipped as a
-    ;; comment, not parsed into a record.
+    ;; A commented-out entry has five colon fields. Skip it as a comment.
     (is (nil? (pgpass/parse-pgpass-line "#localhost:5432:mydb:me:secret")))
     (is (nil? (pgpass/parse-pgpass-line "  # localhost:5432:mydb:me:secret")))))
 

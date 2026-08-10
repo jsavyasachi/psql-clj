@@ -1,9 +1,9 @@
 (ns psql.notify
-  "PostgreSQL LISTEN/NOTIFY helpers backed directly by pgjdbc.
+  "PostgreSQL LISTEN/NOTIFY helpers that use pgjdbc.
 
   Use a dedicated open connection for listening. pgjdbc surfaces notifications
-  only when a query is issued or get-notifications is called. A blocking poll
-  prevents other statements from using that connection until the poll returns."
+  only when a query is sent or get-notifications is called. A blocking poll
+  prevents other statements from using the connection until the poll returns."
   (:import [java.sql Connection Statement]
            [org.postgresql PGConnection PGNotification]))
 
@@ -32,21 +32,21 @@
     (.executeUpdate statement sql)))
 
 (defn listen!
-  "LISTEN on channel using a dedicated open connection.
+  "LISTEN on a channel with a dedicated open connection.
 
   The caller owns the connection lifecycle."
   [^Connection conn channel]
   (execute-command! conn (str "LISTEN " (quote-channel channel))))
 
 (defn unlisten!
-  "UNLISTEN from channel on an open connection.
+  "UNLISTEN from a channel on an open connection.
 
   The caller owns the connection lifecycle."
   [^Connection conn channel]
   (execute-command! conn (str "UNLISTEN " (quote-channel channel))))
 
 (defn notify!
-  "Send payload on channel using an open connection.
+  "Send a payload on a channel with an open connection.
 
   The channel is validated as an identifier and the payload is escaped by
   pgjdbc. Payloads are never logged."
@@ -70,8 +70,8 @@
   "Poll an open PostgreSQL connection for notifications.
 
   Returns a vector of {:name :parameter :pid} maps, or an empty vector. A
-  positive timeout may block all other statements on this connection, so use a
-  dedicated connection. A zero timeout performs a non-blocking poll."
+  positive timeout can block all other statements on this connection. Use a
+  dedicated connection. A zero timeout does a non-blocking poll."
   ([^Connection conn]
    (let [^PGConnection pg (pg-connection conn)]
      (mapv notification->map (or (.getNotifications pg) []))))

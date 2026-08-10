@@ -1,9 +1,9 @@
 (ns psql.aws
   "AWS RDS/Aurora IAM authentication for psql-clj.
 
-   Instead of a static password, RDS can authenticate with a short-lived token
-   signed from your AWS credentials. `iam-spec` returns a psql.core/spec whose
-   :password is a freshly generated token (valid ~15 minutes), so wrap it in a
+   RDS can authenticate with a short-lived token, not a static password. The token
+   is signed with your AWS credentials. `iam-spec` returns a psql.core/spec with
+   a new token as :password. The token is valid for about 15 minutes. Use
    `delay`/refresh or build a new pool before the token expires."
   (:require [psql.core :as pg])
   (:import [software.amazon.awssdk.services.rds RdsUtilities]
@@ -18,8 +18,8 @@
               :else port)))
 
 (defn rds-auth-token
-  "Generate a short-lived RDS IAM authentication token. This signs locally from
-  your AWS credentials; it does not call AWS.
+  "Generate a short-lived RDS IAM authentication token. Sign it locally with
+  your AWS credentials. Do not call AWS.
 
   Options:
     :host                  RDS endpoint hostname (required)
@@ -41,13 +41,13 @@
     (.generateAuthenticationToken utils ^GenerateAuthenticationTokenRequest req)))
 
 (defn iam-spec
-  "Build a psql.core/spec whose :password is a fresh RDS IAM auth token.
+  "Build a psql.core/spec with a new RDS IAM auth token as :password.
 
-  Resolves :host/:port/:user/:dbname through psql.core/spec (so PG* env vars and
-  ~/.pgpass still apply), then overrides :password with a generated token. RDS
-  IAM authentication requires TLS, so :sslmode defaults to \"require\".
+  Resolve :host/:port/:user/:dbname with psql.core/spec. PG* env vars and
+  ~/.pgpass still apply. Then override :password with a new token. RDS IAM
+  authentication requires TLS, so :sslmode defaults to \"require\".
 
-  Requires :region (and a :host reachable as the RDS endpoint). Pass
+  Require :region and a :host reachable as the RDS endpoint. Pass
   :credentials-provider to override the default AWS credentials chain."
   [& {:keys [region sslmode credentials-provider] :or {sslmode "require"} :as opts}]
   (let [spec-opts (apply concat (dissoc opts :region :sslmode :credentials-provider))

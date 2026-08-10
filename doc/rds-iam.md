@@ -1,8 +1,8 @@
 # RDS IAM authentication (psql-clj-aws)
 
 Add `net.clojars.savya/psql-clj-aws` to authenticate to RDS/Aurora with a
-short-lived IAM token instead of a static password. `iam-spec` returns a normal
-spec with the token as `:password` (and `sslmode=require`):
+short-lived IAM token, not a static password. `iam-spec` returns a normal spec
+with the token as `:password` and `sslmode=require`:
 
 ```clj
 (require '[psql.aws :as aws]
@@ -18,7 +18,4 @@ spec with the token as `:password` (and `sslmode=require`):
 ;; or pool it: (pool/pooled-db spec {})
 ```
 
-The token is signed locally from the default AWS credential chain (no API call);
-pass `:credentials-provider` to override it. Tokens last ~15 minutes, so refresh
-the spec (and rebuild the pool) periodically.
-
+The token is signed locally with the default AWS credential chain. No API call is made. Pass `:credentials-provider` to override the chain. Tokens last about 15 minutes. Refresh the spec and rebuild the pool at intervals.

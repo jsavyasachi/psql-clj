@@ -1,5 +1,5 @@
 (ns psql.pgpass
-  "Logic for matching passwords ~/.pgpass passwords to db specs."
+  "Match ~/.pgpass passwords to db specs."
   (:require [clojure.java.io :as io]
             [clojure.string :as str])
   (:import [java.io IOException]
@@ -15,8 +15,8 @@
     PosixFilePermission/OTHERS_EXECUTE})
 
 (defn parse-pgpass-line
-  "The .pgpass file has lines of format: hostname:port:database:username:password.
-  Return a map of fields {:pg-hostname \"*\" ...}, or nil for an ignored line."
+  "The .pgpass file uses this line format: hostname:port:database:username:password.
+  Return a field map {:pg-hostname \"*\" ...}, or nil for an ignored line."
   [s]
   (when-not (or (str/blank? s) (re-find #"^\s*#" s))
     (let [fields (loop [remaining (seq s)
@@ -41,7 +41,7 @@
          fields)))))
 
 (defn default-pgpass-file
-  "Resolve PGPASSFILE or the platform's default password file."
+  "Get PGPASSFILE or the default password file for the platform."
   ([]
    (default-pgpass-file (System/getenv)
                         (System/getProperty "os.name")
@@ -69,7 +69,7 @@
       false)))
 
 (defn read-pgpass
-  "Read the resolved or explicit password file and parse valid records into maps."
+  "Read the resolved or explicit password file. Parse valid records into maps."
   ([]
    (read-pgpass (default-pgpass-file)))
   ([passfile]
@@ -100,7 +100,7 @@
       pg-password)))
 
 (defn pgpass-lookup
-  "Look up a password based on db spec {:host ... :port ... :dbname ... :user ...}."
+  "Look up a password from db spec {:host ... :port ... :dbname ... :user ...}."
   ([spec]
    (pgpass-lookup spec (default-pgpass-file)))
   ([spec passfile]

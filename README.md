@@ -4,7 +4,7 @@
 [![cljdoc](https://cljdoc.org/badge/net.clojars.savya/psql-clj)](https://cljdoc.org/d/net.clojars.savya/psql-clj)
 [![test](https://github.com/jsavyasachi/psql-clj/actions/workflows/test.yml/badge.svg)](https://github.com/jsavyasachi/psql-clj/actions/workflows/test.yml)
 
-PostgreSQL helpers for Clojure: `PG*`-, `PGSERVICE`- and `.pgpass`-aware connection specs, HikariCP pooling that preserves every pgjdbc connection property, [next.jdbc](https://github.com/seancorfield/next-jdbc) type coercion (JSON/JSONB, ranges, arrays, `inet`/`cidr`, geometry, interval, money, enums - read and write), and thin `COPY` and `LISTEN`/`NOTIFY` helpers. PostGIS geometry lives in the `psql-clj-gis` companion.
+PostgreSQL helpers for Clojure: connection specs that use `PG*`, `PGSERVICE`, and `.pgpass`; HikariCP pools that keep pgjdbc properties; and [next.jdbc](https://github.com/seancorfield/next-jdbc) type coercion. It supports JSON/JSONB, ranges, arrays, `inet`/`cidr`, geometry, interval, money, and enums. It also provides `COPY` and `LISTEN`/`NOTIFY` helpers. The `psql-clj-gis` companion provides PostGIS geometry.
 
 ## Stack
 
@@ -18,8 +18,7 @@ PostgreSQL helpers for Clojure: `PG*`-, `PGSERVICE`- and `.pgpass`-aware connect
 
 ## Installation
 
-The library is split into three artifacts so you only pull what you use. Core
-has no PostGIS or AWS dependencies.
+The library has three artifacts. Core has no PostGIS or AWS dependencies.
 
 | Artifact | For |
 |---|---|
@@ -50,13 +49,12 @@ Leiningen:
 - [PostGIS (psql-clj-gis)](doc/postgis.md)
 - [RDS IAM authentication (psql-clj-aws)](doc/rds-iam.md)
 
-`COPY` streaming (`psql.copy`) and `LISTEN`/`NOTIFY` (`psql.notify`) are documented in their
-namespace docstrings on [cljdoc](https://cljdoc.org/d/net.clojars.savya/psql-clj).
+The `psql.copy` and `psql.notify` namespace docstrings describe `COPY` streaming and `LISTEN`/`NOTIFY` on [cljdoc](https://cljdoc.org/d/net.clojars.savya/psql-clj).
 
 ## Development
 
-Core is at the repo root; the companions live under `modules/gis` and
-`modules/aws` and depend on core, so install core locally first.
+Core is at the repository root. The companions are in `modules/gis` and
+`modules/aws`. They depend on core, so install core locally first.
 
 ```bash
 clojure -M:test && clojure -T:build jar               # core (root)
@@ -68,8 +66,7 @@ clojure -T:build deploy                               # publish core to Clojars
 (cd modules/aws && clojure -T:build deploy)           # publish aws companion
 ```
 
-The `:integration` suites (core and gis) read the standard `PG*` variables. A
-quick local PostGIS:
+The core and GIS `:integration` suites read the standard `PG*` variables. Start a local PostGIS instance:
 
 ```bash
 docker run -d -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=psql_clj_test \
@@ -83,7 +80,7 @@ clojure -M:test --focus-meta :integration       # core
 
 Copyright © 2014, Remod Oy. All rights reserved.
 
-Maintenance fork (2026) by Savyasachi. Original project:
+Maintenance fork from 2026 by Savyasachi. Original project:
 <https://github.com/remodoy/clj-postgresql>.
 
 Distributed under the BSD 2-Clause License. See [LICENSE](LICENSE).

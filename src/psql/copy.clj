@@ -1,8 +1,7 @@
 (ns psql.copy
-  "Streaming PostgreSQL COPY helpers backed directly by pgjdbc's CopyManager.
+  "PostgreSQL COPY helpers that use pgjdbc's CopyManager.
 
-  COPY runs on a real java.sql.Connection. The caller owns that connection and
-  must keep it open for the complete COPY operation."
+  COPY runs on a java.sql.Connection. The caller owns the connection and must keep it open for the COPY operation."
   (:require [clojure.string :as str])
   (:import [java.io InputStream OutputStream Reader Writer]
            [java.sql Connection]
@@ -23,7 +22,7 @@
   sql)
 
 (defn copy-in
-  "Run COPY SQL FROM STDIN using a Reader or InputStream and return the row count.
+  "Run COPY SQL FROM STDIN with a Reader or InputStream. Return the row count.
 
   The stream may contain text, CSV, or PostgreSQL binary COPY data. The caller
   owns both the stream and the open connection lifecycle."
@@ -39,7 +38,7 @@
       (.copyIn manager sql ^InputStream source))))
 
 (defn copy-out
-  "Run COPY SQL TO STDOUT into a Writer or OutputStream and return the row count.
+  "Run COPY SQL TO STDOUT with a Writer or OutputStream. Return the row count.
 
   Use an OutputStream for PostgreSQL binary COPY data. The caller owns both the
   stream and the open connection lifecycle."

@@ -1,6 +1,6 @@
 # Connecting
 
-`spec` and `pool` read **PGHOST**, **PGPORT**, **PGUSER**, **PGDATABASE** and **PGPASSWORD** from the environment and fall back to `~/.pgpass` for the password. Function arguments override anything from the environment.
+`spec` and `pool` read **PGHOST**, **PGPORT**, **PGUSER**, **PGDATABASE**, and **PGPASSWORD** from the environment. They use `~/.pgpass` if no password is set. Function arguments override environment values.
 
 ```clj
 (require '[psql.core :as pg]
@@ -20,18 +20,16 @@
 (pg/close! pooled)
 ```
 
-Delay creation so connection parameters are not resolved (and the pool is not
-opened) at load time:
+Use `delay` to prevent connection parameter resolution and pool creation at load time:
 
 ```clj
 (def db (delay (pg/pool)))
 (jdbc/execute! @db ["SELECT 1"])
 ```
 
-`spec` resolves its map as follows:
+`spec` resolves its map in this order:
 
-1. `:dbtype` defaults to `"postgresql"`; the current OS username seeds `:user` and `:dbname` (as `psql` does).
+1. `:dbtype` defaults to `"postgresql"`. The current OS username sets `:user` and `:dbname`, as `psql` does.
 2. `PGHOST` / `PGPORT` / `PGUSER` / `PGDATABASE` override `:host` / `:port` / `:user` / `:dbname`.
 3. Explicit `spec` arguments override everything above.
-4. The password is taken from an explicit `:password`, then `PGPASSWORD`, then a `~/.pgpass` match.
-
+4. The password comes from an explicit `:password`, then `PGPASSWORD`, then a `~/.pgpass` match.

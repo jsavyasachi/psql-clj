@@ -1,5 +1,5 @@
 (ns psql.pool
-  "Hikari based connection pool"
+  "Hikari connection pool."
   (:require [clojure.string :as str]
             [hikari-cp.core :as hikari])
   (:import (java.net URLEncoder)
@@ -75,10 +75,8 @@
     jdbc-url))
 
 (defn db-spec->pool-config
-  "Converts a db-spec to Hikari pool config. Connection properties are
-  appended to the JDBC URL. Hikari options can be passed with `hikari`. See
-  https://github.com/tomekw/hikari-cp#configuration-options for that
-  list."
+  "Convert a db-spec to Hikari pool config. Add connection properties to the JDBC URL.
+  Pass Hikari options with `hikari`. See https://github.com/tomekw/hikari-cp#configuration-options for the list."
   [{:keys [dbtype dbname user password hikari jdbc-url jdbcUrl service]
     :as spec}]
   (let [generated-url (format "jdbc:%s://%s/%s"

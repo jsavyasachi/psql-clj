@@ -1,8 +1,8 @@
 # PostGIS geometry & geography (psql-clj-gis)
 
 Add `net.clojars.savya/psql-clj-gis` and require `psql.gis.types` to activate
-the coercions. `psql.spatial` builds `net.postgis.jdbc.geometry.*` objects; they
-can be used directly as query parameters and are read back as GeoJSON maps.
+the coercions. `psql.spatial` builds `net.postgis.jdbc.geometry.*` objects. You
+can use them as query parameters. They return as GeoJSON maps.
 
 ```clj
 (require '[psql.spatial :as st]
@@ -19,11 +19,10 @@ can be used directly as query parameters and are read back as GeoJSON maps.
 ;; => {:shapes/geom {:type :Point :coordinates [1.0 2.0]}}
 ```
 
-For `geography` columns (WGS84), tag the geometry with SRID 4326 via
+For `geography` columns with WGS84, tag the geometry with SRID 4326 with
 `st/geography`:
 
 ```clj
 (jdbc/execute! db ["INSERT INTO places (geog) VALUES (?)"
                    (st/geography (st/point [13.4 52.5]))])
 ```
-

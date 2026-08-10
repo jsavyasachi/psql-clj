@@ -1,7 +1,6 @@
 # Automatic type conversion
 
-Native Clojure maps, vectors and sequences are accepted as parameters; the
-target SQL type reported by PostgreSQL decides the conversion.
+Clojure maps, vectors, and sequences are accepted as parameters. The target SQL type reported by PostgreSQL selects the conversion.
 
 ```clj
 (jdbc/execute! db ["SELECT ?::int[]  AS arr" [1 2 3 4]])
@@ -12,13 +11,13 @@ target SQL type reported by PostgreSQL decides the conversion.
 ;; => [{:epoch #inst "1970-01-01T00:00:00.001-00:00"}]
 ```
 
-- **Maps** — `json`/`jsonb` columns accept any map; `geometry` columns accept GeoJSON-like maps. Extend with `(defmethod psql.types/map->parameter :mytype [m _] ...)`.
-- **Vectors** — array columns (`int[]`, `text[]`, ...) accept vectors; `inet` accepts `[192 168 1 11]`. Extend with `(defmethod psql.types/vec->parameter :mytype [v _] ...)`.
-- **Other seqables** (lists, lazy seqs) are treated like vectors.
-- **Numbers** bound to `timestamp`/`timestamptz` become `java.sql.Timestamp`. Extend with `(defmethod psql.types/num->parameter :mytype [n _] ...)`.
-- **Keywords** bind to `enum` columns by name: `:happy` goes into a `mood` enum as `'happy'` (and `?::mood` casts work). Enum values read back as plain strings.
+- **Maps**: `json`/`jsonb` columns accept any map. `geometry` columns accept GeoJSON-like maps. Extend with `(defmethod psql.types/map->parameter :mytype [m _] ...)`.
+- **Vectors**: Array columns (`int[]`, `text[]`, ...) accept vectors. `inet` accepts `[192 168 1 11]`. Extend with `(defmethod psql.types/vec->parameter :mytype [v _] ...)`.
+- **Other seqables**: Lists and lazy seqs act like vectors.
+- **Numbers**: Numbers bound to `timestamp`/`timestamptz` become `java.sql.Timestamp`. Extend with `(defmethod psql.types/num->parameter :mytype [n _] ...)`.
+- **Keywords**: Keywords bind to `enum` columns by name. `:happy` enters a `mood` enum as `'happy'`, and `?::mood` casts work. Enum values return as plain strings.
 
-On the way out, `json`/`jsonb` parse to Clojure data and arrays become vectors.
+On output, `json`/`jsonb` parse to Clojure data and arrays become vectors.
 
 ## PostgreSQL geometric types
 
@@ -33,4 +32,3 @@ On the way out, `json`/`jsonb` parse to Clojure data and arrays become vectors.
 (pg/path [[1 2] [10 20] [50 100]] true)
 (pg/polygon [[1 2] [3 4] [5 6]])
 ```
-

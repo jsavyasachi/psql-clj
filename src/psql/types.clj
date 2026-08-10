@@ -1,11 +1,11 @@
 (ns psql.types
   "Extend next.jdbc's SettableParameter and ReadableColumn protocols so that
-   PGobject (json/jsonb/enum), SQL arrays and inet values move between Clojure
+   PGobject (json/jsonb/enum), SQL arrays, and inet values move between Clojure
    data and PostgreSQL without manual wrapping.
 
    The map->parameter / vec->parameter / num->parameter multimethods are the
-   extension seam: companion artifacts (e.g. psql-clj-gis) add methods for their
-   own SQL types without this namespace depending on them."
+   extension point: companion artifacts, such as psql-clj-gis, add methods for
+   their SQL types without this namespace depending on them."
   (:refer-clojure :exclude [range])
   (:require [next.jdbc.prepare :as prepare]
             [next.jdbc.result-set :as rs]
@@ -20,7 +20,7 @@
            [java.math BigDecimal]))
 
 ;;
-;; Metadata helpers (handy when debugging which SQL type a column/parameter is)
+;; Metadata helpers for a column or parameter SQL type
 ;;
 
 (defn pmd
@@ -64,10 +64,10 @@
   (.getParameterTypeName (.getParameterMetaData ps) i))
 
 ;;;;
-;; Write side: convert Clojure values into SQL parameters.
+;; Write side: convert Clojure values to SQL parameters.
 ;;;;
 
-;; multimethod selector keyed on the target SQL type name
+;; Multimethod selector that uses the target SQL type name
 (defn parameter-dispatch-fn
   [_ type-name]
   (keyword type-name))
@@ -90,7 +90,7 @@
 
 (defn range
   "Create a lossless Clojure representation of a PostgreSQL range. Bounds are
-  strings or nil for unbounded; options describe inclusivity and emptiness."
+  strings or nil for unbounded values. Options describe inclusivity and emptiness."
   [lower upper & {:keys [lower-inclusive? upper-inclusive? empty?]
                   :or {lower-inclusive? true
                        upper-inclusive? false
@@ -157,7 +157,7 @@
     (.setType type-name)
     (.setValue (inet-value value))))
 
-;; Clojure maps -> SQL value, by target column type
+;; Clojure maps to SQL values by target column type
 (defmulti map->parameter parameter-dispatch-fn)
 
 (defmethod map->parameter :json
@@ -183,7 +183,7 @@
   [m _]
   m)
 
-;; Clojure vectors -> SQL value, by target column type
+;; Clojure vectors to SQL values by target column type
 (defmulti vec->parameter parameter-dispatch-fn)
 
 (defmethod vec->parameter :json
@@ -216,7 +216,7 @@
   [v _]
   v)
 
-;; Numbers -> SQL value, by target column type
+;; Numbers to SQL values by target column type
 (defmulti num->parameter parameter-dispatch-fn)
 
 (defmethod num->parameter :timestamptz
@@ -232,12 +232,12 @@
   v)
 
 (extend-protocol prepare/SettableParameter
-  ;; Maps become json/jsonb/geometry depending on the column type.
+  ;; Maps become json/jsonb/geometry based on the column type.
   clojure.lang.IPersistentMap
   (set-parameter [m ^PreparedStatement ps ^long i]
     (.setObject ps i (map->parameter m (keyword (param-type-name ps i)))))
 
-  ;; Vectors become SQL arrays, or json/jsonb/inet for those column types.
+  ;; Vectors become SQL arrays, or json/jsonb/inet for these column types.
   clojure.lang.IPersistentVector
   (set-parameter [v ^PreparedStatement ps ^long i]
     (let [type-name (param-type-name ps i)]
@@ -246,17 +246,17 @@
                                          (clj->java-array v)))
         (.setObject ps i (vec->parameter v type-name)))))
 
-  ;; Any other seqable (lists, lazy seqs) is handled like a vector.
+  ;; Other seqables, such as lists and lazy seqs, act like vectors.
   clojure.lang.Seqable
   (set-parameter [seqable ^PreparedStatement ps ^long i]
     (prepare/set-parameter (vec (seq seqable)) ps i))
 
-  ;; Numbers may need coercion for e.g. timestamp columns.
+  ;; Numbers can need coercion for timestamp columns.
   java.lang.Number
   (set-parameter [n ^PreparedStatement ps ^long i]
     (.setObject ps i (num->parameter n (param-type-name ps i))))
 
-  ;; Inet addresses map onto PostgreSQL inet.
+  ;; Inet addresses map to PostgreSQL inet.
   InetAddress
   (set-parameter [^InetAddress inet-addr ^PreparedStatement ps ^long i]
     (.setObject ps i (doto (PGobject.)
@@ -264,8 +264,8 @@
                        (.setValue (.getHostAddress inet-addr)))))
 
   ;; Keywords bind to enum (or other named string) columns by name: the column's
-  ;; own SQL type is used, so :happy goes into a `mood` enum as 'happy'. (Enum
-  ;; values read back as plain strings - the driver does not carry the enum type.)
+  ;; own SQL type is used, so :happy enters a `mood` enum as 'happy'. Enum
+  ;; values return as plain strings. The driver does not carry the enum type.
   clojure.lang.Keyword
   (set-parameter [kw ^PreparedStatement ps ^long i]
     (.setObject ps i (doto (PGobject.)
@@ -273,16 +273,16 @@
                        (.setValue (name kw))))))
 
 ;;;;
-;; Read side: convert SQL result values into Clojure data.
+;; Read side: convert SQL result values to Clojure data.
 ;;;;
 
 (defn read-pg-vector
-  "oidvector, int2vector, etc. are space separated lists."
+  "oidvector, int2vector, and similar types are space-separated lists."
   [s]
   (when (seq s) (str/split s #"\s+")))
 
 (defn read-pg-array
-  "Arrays are of the form {1,2,3}."
+  "Arrays use the form {1,2,3}."
   [s]
   (when (seq s)
     (when-let [[_ content] (re-matches #"^\{(.+)\}$" s)]
@@ -438,7 +438,7 @@
   (mapv read-point points))
 
 (extend-protocol rs/ReadableColumn
-  ;; Parse SQLXML into a Clojure map representing the XML content.
+  ;; Parse SQLXML to a Clojure map that represents the XML content.
   java.sql.SQLXML
   (read-column-by-label [^java.sql.SQLXML v _]
     (xml/parse (.getBinaryStream v)))
@@ -485,14 +485,14 @@
   (read-column-by-label [^PGpolygon v _] (read-points (.points v)))
   (read-column-by-index [^PGpolygon v _ _] (read-points (.points v)))
 
-  ;; Convert java.sql.Array to a Clojure vector.
+  ;; Convert a java.sql.Array to a Clojure vector.
   java.sql.Array
   (read-column-by-label [^java.sql.Array v _]
     (java-array->clj (.getArray v)))
   (read-column-by-index [^java.sql.Array v _ _]
     (java-array->clj (.getArray v)))
 
-  ;; PGobjects route through the read-pgobject multimethod.
+  ;; PGobjects use the read-pgobject multimethod.
   PGobject
   (read-column-by-label [^PGobject v _]
     (read-pgobject v))

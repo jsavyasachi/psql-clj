@@ -1,6 +1,6 @@
 (ns psql.core
-  "Allow using PostgreSQL from Clojure as effortlessly as possible by reading connection parameter defaults from
-  PostgreSQL environment variables PGDATABASE, PGHOST, PGPORT, PGUSER and by reading password from ~/.pgpass if available."
+  "Use PostgreSQL from Clojure with connection parameter defaults from PGDATABASE, PGHOST, PGPORT, and PGUSER.
+  Read the password from ~/.pgpass when it is available."
   (:require [psql.types]
             [psql.pool :refer [pooled-db] :as pool]
             [psql.pgpass :as pgpass]
@@ -18,8 +18,8 @@
            org.postgresql.geometric.PGpolygon))
 
 (defn getenv->map
-  "Keywordize an environment-style map. With no argument, reads (System/getenv).
-  Accepts any map-like input so callers can pass a plain map in tests."
+  "Keywordize an environment-style map. With no argument, read (System/getenv).
+  Accept any map-like input. Callers can pass a plain map in tests."
   ([env]
    {:post [(map? %)]}
    (persistent!
@@ -30,8 +30,8 @@
    (getenv->map (System/getenv))))
 
 (defn default-spec
-  "Reasonable defaults as with the psql command line tool.
-  Use username for user and db. Don't use host."
+  "Set defaults like the psql command line tool.
+  Use the username for the user and dbname. Do not set a host."
   []
   (let [username (java.lang.System/getProperty "user.name")]
     {:dbtype "postgresql"
@@ -39,9 +39,8 @@
      :dbname username}))
 
 (defn env-spec
-  "Get a db spec from libpq PG* environment variables, translated to pgjdbc
-  property names where needed. PGHOSTADDR, PGCLIENTENCODING, PGREQUIREPEER,
-  PGSSLCRL/SNI/min-max-proto, and the Unix-socket default host are unsupported."
+  "Get a db spec from libpq PG* environment variables. Use pgjdbc property names where needed.
+  PGHOSTADDR, PGCLIENTENCODING, PGREQUIREPEER, PGSSLCRL/SNI/min-max-proto, and the Unix-socket default host are unsupported."
   [{:keys [PGDATABASE PGHOST PGPORT PGUSER PGTARGETSESSIONATTRS] :as env}]
   {:pre [(map? env)]
    :post [(map? %)]}
@@ -80,13 +79,12 @@
              (get target-server-types PGTARGETSESSIONATTRS PGTARGETSESSIONATTRS)))))
 
 (defn spec
-  "Create a PostgreSQL database spec with libpq-style layering: explicit
-  options override a :service/PGSERVICE definition, which overrides ordinary
-  PG* environment values, which override built-in defaults. Accepts overrides:
+  "Create a PostgreSQL database spec with libpq-style layers. Explicit options override a :service/PGSERVICE definition.
+  The service definition overrides ordinary PG* environment values. Environment values override built-in defaults. Accept overrides:
   (spec :dbname ... :host ... :port ... :user ... :password ...)
 
-  Password precedence follows the same layers, then falls back to ~/.pgpass.
-  Pass :env with a plain environment map for deterministic use in tests."
+  Password precedence uses the same layers, then uses ~/.pgpass.
+  Pass :env with a plain environment map for repeatable tests."
   [& {:keys [password service env] :as opts}]
   {:post [(contains? % :dbname)
           (contains? % :user)]}
@@ -110,7 +108,7 @@
     (pooled-db m {})))
 
 (defn close!
-  "Close db-spec if possible. Return true if the datasource was closeable and closed."
+  "Close db-spec if possible. Return true if the datasource can close and is closed."
   [{:keys [datasource]}]
   (when (instance? java.io.Closeable datasource)
     (.close ^java.io.Closeable datasource)
@@ -132,34 +130,34 @@
 ;;
 
 (defn object
-  "Make a custom PGobject, e.g. (pg/object \"json\" \"{}\")"
+  "Create a custom PGobject. Example: (pg/object \"json\" \"{}\")"
   [type value]
   (doto (PGobject.)
     (.setType (name type))
     (.setValue (str value))))
 
 (defn interval
-  "Create a PGinterval. (pg/interval :hours 2)"
+  "Create a PGinterval. Example: (pg/interval :hours 2)"
   [& {:keys [years months days hours minutes seconds]
       :or {years 0 months 0 days 0 hours 0 minutes 0 seconds 0.0}}]
   (PGInterval. years months days hours minutes ^double seconds))
 
 (defn money
-  "Create PGmoney object"
+  "Create a PGmoney object."
   [amount]
   (PGmoney. ^double amount))
 
 (defn xml
-  "Make PostgreSQL XML object"
+  "Create a PostgreSQL XML object."
   [s]
   (object :xml (str s)))
 
 ;;
-;; Constructors for geometric Types
+;; Constructors for geometric types
 ;;
 
 (defn point
-  "Create a PGpoint object"
+  "Create a PGpoint object."
   ([x y]
    (PGpoint. x y))
   ([obj]
@@ -169,7 +167,7 @@
      :else (PGpoint. (str obj)))))
 
 (defn box
-  "Create a PGbox object"
+  "Create a PGbox object."
   ([p1 p2]
    (PGbox. (point p1) (point p2)))
   ([x1 y1 x2 y2]
@@ -180,7 +178,7 @@
      (PGbox. (str obj)))))
 
 (defn circle
-  "Create a PGcircle object"
+  "Create a PGcircle object."
   ([x y r]
    (PGcircle. x y r))
   ([center-point r]
@@ -191,7 +189,7 @@
      (PGcircle. (str obj)))))
 
 (defn line
-  "Create a PGline object"
+  "Create a PGline object."
   ([x1 y1 x2 y2]
    (PGline. x1 y1 x2 y2))
   ([p1 p2]
@@ -202,7 +200,7 @@
      (PGline. (str obj)))))
 
 (defn lseg
-  "Create a PGlseg object"
+  "Create a PGlseg object."
   ([x1 y1 x2 y2]
    (PGlseg. x1 y1 x2 y2))
   ([p1 p2]
@@ -213,7 +211,7 @@
      (PGlseg. (str obj)))))
 
 (defn path
-  "Create a PGpath object"
+  "Create a PGpath object."
   ([points open?]
    (PGpath. (into-array PGpoint (map point points)) open?))
   ([obj]
@@ -222,7 +220,7 @@
      (PGpath. (str obj)))))
 
 (defn polygon
-  "Create a PGpolygon object"
+  "Create a PGpolygon object."
   [points-or-str]
   (if (coll? points-or-str)
     (PGpolygon. ^"[Lorg.postgresql.geometric.PGpoint;" (into-array PGpoint (map point points-or-str)))

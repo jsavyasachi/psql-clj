@@ -4,8 +4,8 @@
   (:import [software.amazon.awssdk.auth.credentials
             AwsBasicCredentials StaticCredentialsProvider]))
 
-;; Static, fake credentials. generateAuthenticationToken signs locally, so this
-;; produces a real SigV4-signed token offline without ever calling AWS.
+;; Static fake credentials. generateAuthenticationToken signs locally, so this
+;; makes a real SigV4-signed token offline without calling AWS.
 (def ^:private creds
   (StaticCredentialsProvider/create
    (AwsBasicCredentials/create "AKIAIOSFODNN7EXAMPLE"

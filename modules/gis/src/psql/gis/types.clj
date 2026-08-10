@@ -1,10 +1,10 @@
 (ns psql.gis.types
   "next.jdbc coercion for PostGIS `geometry` and `geography` columns.
 
-   Requiring this namespace registers the extensions (mirroring how requiring
-   psql.types activates the core coercions). It plugs into core's
-   psql.types/map->parameter multimethod and extends next.jdbc's protocols, so
-   core never has to depend on PostGIS."
+   Requiring this namespace registers the extensions. Requiring psql.types
+   activates the core coercions. This namespace uses the core
+   psql.types/map->parameter multimethod and extends next.jdbc protocols. Core
+   does not depend on PostGIS."
   (:require [psql.types :as types]
             [psql.coerce :as coerce]
             [next.jdbc.prepare :as prepare]
@@ -18,28 +18,28 @@
   [m _]
   (PGgeometryLW. ^Geometry (coerce/geojson->postgis m)))
 
-;; geography columns are WGS84; tag the geometry with SRID 4326 (PostGIS rejects
-;; an unset SRID on geography).
+;; geography columns use WGS84. Tag the geometry with SRID 4326. PostGIS rejects
+;; an unset SRID on geography.
 (defmethod types/map->parameter :geography
   [m _]
   (PGgeometryLW. ^Geometry (doto ^Geometry (coerce/geojson->postgis m)
                              (.setSrid 4326))))
 
 (extend-protocol prepare/SettableParameter
-  ;; PostGIS geometry/geography objects wrap into the lightweight PGgeometry.
+  ;; PostGIS geometry/geography objects use the lightweight PGgeometry wrapper.
   Geometry
   (set-parameter [^Geometry g ^PreparedStatement ps ^long i]
     (.setObject ps i (PGgeometryLW. ^Geometry g))))
 
 (extend-protocol rs/ReadableColumn
-  ;; geometry columns read back as PGgeometry; return the geometry as GeoJSON.
+  ;; geometry columns return as PGgeometry. Return the geometry as GeoJSON.
   PGgeometry
   (read-column-by-label [^PGgeometry v _]
     (coerce/postgis->geojson (.getGeometry v)))
   (read-column-by-index [^PGgeometry v _ _]
     (coerce/postgis->geojson (.getGeometry v)))
 
-  ;; geography columns read back as the distinct PGgeography wrapper.
+  ;; geography columns return as the distinct PGgeography wrapper.
   PGgeography
   (read-column-by-label [^PGgeography v _]
     (coerce/postgis->geojson (.getGeometry v)))

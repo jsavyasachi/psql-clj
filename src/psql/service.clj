@@ -1,5 +1,5 @@
 (ns psql.service
-  "Resolve pgjdbc service definitions into psql-clj database specs."
+  "Resolve pgjdbc service definitions to psql-clj database specs."
   (:require [clojure.java.io :as io])
   (:import [org.postgresql.jdbcurlresolver PgServiceConfParser]))
 
@@ -41,8 +41,8 @@
                (into {} properties))))
 
 (defn resolve-service
-  "Resolve SERVICE-NAME using pgjdbc's pg_service.conf parser. ENV may supply
-  PGSERVICEFILE or PGSYSCONFDIR; otherwise pgjdbc uses its normal search path."
+  "Resolve SERVICE-NAME with pgjdbc's pg_service.conf parser. ENV can supply
+  PGSERVICEFILE or PGSYSCONFDIR. Otherwise, pgjdbc uses its normal search path."
   [service-name env]
   {:pre [(map? env)]
    :post [(map? %)]}

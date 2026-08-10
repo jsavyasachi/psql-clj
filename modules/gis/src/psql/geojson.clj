@@ -2,7 +2,7 @@
   (:require [schema.core :as s]))
 
 ;;
-;; GeoJSON as Primatic Schema
+;; GeoJSON as a Prismatic Schema
 ;;
 
 (s/defschema NamedCRS
@@ -15,7 +15,7 @@
                 :type s/Str}})
 
 (s/defschema CRS
-  "Coordinate Reference System - default is WGS84 if not defined."
+  "Coordinate Reference System. The default is WGS84 if it is not defined."
   (s/either NamedCRS LinkedCRS))
 
 (s/defschema BBox
@@ -56,7 +56,7 @@
    (s/optional-key :bbox) BBox})
 
 (s/defschema LinearRingCoords
-  "LinearRing coordinate array used for building polygons.
+  "LinearRing coordinate array used to build polygons.
    The first and last positions must be equivalent."
   [(s/one Position 'p1) (s/one Position 'p2) (s/one Position 'p3) (s/one Position 'p4) Position])
 
@@ -122,4 +122,3 @@
    :post [(s/validate MultiPoint %)]}
   {:type :MultiPoint
    :coordinates (mapv vec points)})
-

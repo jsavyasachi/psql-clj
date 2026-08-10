@@ -80,7 +80,7 @@
             (pool/db-spec->pool-config
              {:dbtype "postgresql" :host "a.example,b.example" :port 5432
               :dbname "app" :user "u"})))))
-  (testing "prebuilt jdbc urls and service urls are first-class"
+  (testing "prebuilt jdbc urls and service urls work"
     (doseq [spec [{:jdbc-url "jdbc:postgresql://one/app"}
                   {:jdbcUrl "jdbc:postgresql://two/app"}
                   {:service "jdbc:postgresql://three/app"}]]
