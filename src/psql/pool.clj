@@ -2,8 +2,7 @@
   "Hikari connection pool."
   (:require [clojure.string :as str]
             [hikari-cp.core :as hikari])
-  (:import (java.net URLEncoder)
-           (java.util.concurrent TimeUnit)))
+  (:import (java.net URLEncoder)))
 
 (def ^:private structural-keys
   #{:dbtype :host :hosts :port :dbname :user :password :hikari
