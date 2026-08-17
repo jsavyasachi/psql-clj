@@ -83,6 +83,22 @@ jobs:
       - name: Test
         run: clojure -M:test
 
+      - name: Extract release notes from CHANGELOG
+        if: github.ref_type == 'tag'
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          PATTERN=$(printf '%s' "$VERSION" | sed 's/\./\\./g')
+          awk -v p="$PATTERN" '
+            $0 ~ "^## \\[" p "\\]" {found=1; next}
+            found && /^## / {exit}
+            found {print}
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::CHANGELOG.md has no section for $VERSION"
+            exit 1
+          fi
+          cat release-notes.md
+
       # 3-artifact release. Companions declare a :mvn/version dep on core, so core
       # is always installed to ~/.m2 first (companions resolve it). Clojars is
       # immutable: redeploying an already-published non-SNAPSHOT version 403s. So
@@ -114,22 +130,6 @@ jobs:
           deploy_if_new psql-clj     .
           deploy_if_new psql-clj-gis modules/gis
           deploy_if_new psql-clj-aws modules/aws
-
-      - name: Extract release notes from CHANGELOG
-        if: github.ref_type == 'tag'
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          PATTERN=$(printf '%s' "$VERSION" | sed 's/\./\\./g')
-          awk -v p="$PATTERN" '
-            $0 ~ "^## \\[" p "\\]" {found=1; next}
-            found && /^## / {exit}
-            found {print}
-          ' CHANGELOG.md > release-notes.md
-          if [ ! -s release-notes.md ]; then
-            echo "::error::CHANGELOG.md has no section for $VERSION"
-            exit 1
-          fi
-          cat release-notes.md
 
       - name: Create GitHub Release
         if: github.ref_type == 'tag'
