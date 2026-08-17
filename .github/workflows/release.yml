@@ -71,6 +71,29 @@ jobs:
           check psql-clj-gis modules/gis
           check psql-clj-aws modules/aws
 
+      - name: Verify doc/*.md install coordinates match versions
+        if: github.ref_type == 'tag'
+        run: |
+          rc=0
+          check () {
+            local dir="$2" ver lib f found
+            ver=$(sed -n 's/.*def version "\([^"]*\)".*/\1/p' "$dir/build.clj")
+            lib=$(grep -oE "net\.clojars\.[^ ')]+" "$dir/build.clj" | head -1)
+            shopt -s nullglob
+            for f in doc/*.md; do
+              while IFS= read -r found; do
+                if [ "$found" != "$ver" ]; then
+                  echo "::error file=$f::$f pins $lib {:mvn/version \"$found\"}, expected \"$ver\""
+                  rc=1
+                fi
+              done < <(grep -oE "net\.clojars\.[a-zA-Z0-9._/-]+ \{:mvn/version \"[^\"]+\"\}" "$f" | grep -F "$lib {:mvn/version" | grep -oE '"[^"]+"' | tr -d '"')
+            done
+          }
+          check psql-clj     .
+          check psql-clj-gis modules/gis
+          check psql-clj-aws modules/aws
+          exit $rc
+
       - name: Verify tag commit is on main
         if: github.ref_type == 'tag'
         run: |
