@@ -10,7 +10,7 @@ Send bug reports, fixes, and focused feature contributions for `psql-clj`.
 
 ## Project layout
 
-`psql-clj` is a Leiningen monorepo with three artifacts:
+`psql-clj` is a `deps.edn` monorepo with three artifacts:
 
 | Path | Artifact |
 |---|---|
@@ -21,9 +21,9 @@ Send bug reports, fixes, and focused feature contributions for `psql-clj`.
 The companions depend on core. Install core locally before you build them:
 
 ```bash
-lein check && lein test && lein install        # core (root)
-cd modules/gis && lein check && lein test       # PostGIS companion
-cd modules/aws && lein check && lein test       # AWS companion
+clojure -M:test && clojure -T:build install     # core (root)
+(cd modules/gis && clojure -M:test)              # PostGIS companion
+(cd modules/aws && clojure -M:test)              # AWS companion
 ```
 
 The core and GIS `:integration` suites need a live PostgreSQL instance with PostGIS. They read the standard `PG*` variables:
@@ -32,15 +32,15 @@ The core and GIS `:integration` suites need a live PostgreSQL instance with Post
 docker run -d -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=psql_clj_test \
   -p 5432:5432 postgis/postgis:16-3.4
 export PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres PGDATABASE=psql_clj_test
-lein test :integration
-(cd modules/gis && lein test :integration)
+clojure -M:test --focus-meta :integration
+(cd modules/gis && clojure -M:test --focus-meta :integration)
 ```
 
 Requirements for a mergeable change:
 
 - **Tests first.** Add or update tests for the behavior you change; for a bug
   fix, include a regression test that fails before your fix and passes after.
-- **Green build.** `lein test` passes and `lein check` reports **zero**
+- **Green build.** The test suite passes and the build reports **zero**
   reflection warnings in every affected module.
 - **One scope.** Keep each pull request to one logical change.
 
