@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.3.0] - 2026-08-26
+
+Backward-compatible additions.
+
+### Added
+- **Connection operational controls** (`psql.connection`): `backend-pid`,
+  `cancel-query!`, `parameter-status`/`parameter-statuses`, `default-fetch-size`
+  / `set-default-fetch-size!`, `autosave` / `set-autosave!` (`:never`/`:always`/
+  `:conservative`), `escape-identifier`, and `statement-timeout!` - the pgjdbc
+  `PGConnection` operational surface that previously required Java interop.
+- **Schema and catalog introspection** (`psql.catalog`): `schemas`, `views`,
+  `columns`, `primary-keys`, `foreign-keys`, and `indexes`, each returning
+  normalized Clojure data over JDBC `DatabaseMetaData`.
+
+### Fixed
+- Integration tests: the `inet` read assertions now expect the structured
+  `{:address … :prefix …}` map the reader has produced since the symmetric
+  coercions landed (test-only; no behavior change).
+
 ## [2.2.0] - 2026-08-26
 
 Backward-compatible additions. Companion release: `psql-clj-gis` 2.1.0.

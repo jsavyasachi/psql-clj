@@ -33,8 +33,8 @@
   (is (= {:x {"foo" {"bar" 1}}} (q1 "SELECT ?::jsonb AS x" {:foo {:bar 1}})))
   (is (= {:x [1 2 7 6 5]}       (q1 "SELECT ?::int[] AS x" [1 2 7 6 5])))
   (is (= {:x ["a" "b" "c"]}     (q1 "SELECT ?::text[] AS x" '("a" "b" "c"))))
-  (is (= {:x "127.0.0.1"}       (q1 "SELECT ?::inet AS x" (InetAddress/getByName "127.0.0.1"))))
-  (is (= {:x "::1"}             (q1 "SELECT ?::inet AS x" (InetAddress/getByName "::1")))))
+  (is (= {:x {:address "127.0.0.1" :prefix nil}} (q1 "SELECT ?::inet AS x" (InetAddress/getByName "127.0.0.1"))))
+  (is (= {:x {:address "::1" :prefix nil}}        (q1 "SELECT ?::inet AS x" (InetAddress/getByName "::1")))))
 
 (deftest ^:integration json-jsonb-table-roundtrip
   (jdbc/with-transaction [tx (db) {:rollback-only true}]
