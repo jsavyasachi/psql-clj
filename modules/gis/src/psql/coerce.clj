@@ -27,6 +27,21 @@
   [m]
   (st/multi-polygon (:coordinates m)))
 
+(defmethod geojson->postgis :GeometryCollection
+  [m]
+  (st/geometry-collection (map geojson->postgis (:geometries m))))
+
+(defmethod geojson->postgis :Feature
+  ;; A GeoJSON Feature has no PostGIS geometry equivalent; convert its geometry.
+  ;; Non-spatial `:properties` are not represented in a PostGIS geometry.
+  [m]
+  (geojson->postgis (:geometry m)))
+
+(defmethod geojson->postgis :FeatureCollection
+  ;; Convert to a GeometryCollection of the member features' geometries.
+  [m]
+  (st/geometry-collection (map (comp geojson->postgis :geometry) (:features m))))
+
 (defprotocol PostgisToCoords
   (postgis->coords [o]))
 
@@ -82,4 +97,8 @@
   net.postgis.jdbc.geometry.MultiPolygon
   (postgis->geojson [o]
     {:type :MultiPolygon
-     :coordinates (postgis->coords o)}))
+     :coordinates (postgis->coords o)})
+  net.postgis.jdbc.geometry.GeometryCollection
+  (postgis->geojson [o]
+    {:type :GeometryCollection
+     :geometries (mapv postgis->geojson (.getGeometries o))}))

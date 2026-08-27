@@ -151,3 +151,16 @@
   (is (instance? PGlseg (pg/lseg 0 0 1 1)))
   (is (instance? PGpath (pg/path [[0 0] [1 1]] true)))
   (is (instance? PGpolygon (pg/polygon [[0 0] [1 0] [1 1]]))))
+
+(deftest text-search-and-network-type-constructors
+  (testing "each helper produces a PGobject with the right type and string value"
+    (doseq [[^PGobject obj type value]
+            [[(pg/tsvector "'cat':1 'sat':2") "tsvector" "'cat':1 'sat':2"]
+             [(pg/tsquery "cat & sat")        "tsquery"  "cat & sat"]
+             [(pg/jsonpath "$.a[*] ? (@ > 1)") "jsonpath" "$.a[*] ? (@ > 1)"]
+             [(pg/macaddr "08:00:2b:01:02:03") "macaddr"  "08:00:2b:01:02:03"]
+             [(pg/macaddr8 "08:00:2b:01:02:03:04:05") "macaddr8" "08:00:2b:01:02:03:04:05"]
+             [(pg/pg-lsn "16/B374D848")        "pg_lsn"   "16/B374D848"]]]
+      (is (instance? PGobject obj))
+      (is (= type (.getType obj)))
+      (is (= value (.getValue obj))))))

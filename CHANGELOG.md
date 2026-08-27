@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.2.0] - 2026-08-26
+
+Backward-compatible additions. Companion release: `psql-clj-gis` 2.1.0.
+
+### Added
+- **Text-search and network type constructors** (`psql.core`): `tsvector`,
+  `tsquery`, `jsonpath`, `macaddr`, `macaddr8`, and `pg-lsn` produce the
+  corresponding typed `PGobject`, removing recurring `(pg/object "…" v)`
+  boilerplate. Values still read back through the existing `PGobject` path.
+- **GeoJSON `GeometryCollection`, `Feature`, and `FeatureCollection`**
+  (`psql-clj-gis`, `psql.coerce` + `psql.spatial`): `geojson->postgis` now
+  handles a `GeometryCollection` (round-tripping via the new
+  `psql.spatial/geometry-collection` constructor), a `Feature` (converted to its
+  underlying geometry; non-spatial `:properties` are not represented in a PostGIS
+  geometry), and a `FeatureCollection` (converted to a `GeometryCollection` of the
+  members' geometries). `postgis->geojson` now converts a `GeometryCollection`.
+
 ## [2.1.1] - 2026-07-16
 ### Fixed
 - `.pgpass` comment lines are now skipped by the intended leading-`#` rule rather

@@ -152,6 +152,36 @@
   [s]
   (object :xml (str s)))
 
+(defn tsvector
+  "Create a PostgreSQL `tsvector` (full-text document) value."
+  [s]
+  (object :tsvector (str s)))
+
+(defn tsquery
+  "Create a PostgreSQL `tsquery` (full-text query) value."
+  [s]
+  (object :tsquery (str s)))
+
+(defn jsonpath
+  "Create a PostgreSQL `jsonpath` value."
+  [s]
+  (object :jsonpath (str s)))
+
+(defn macaddr
+  "Create a PostgreSQL `macaddr` (6-byte MAC address) value."
+  [s]
+  (object :macaddr (str s)))
+
+(defn macaddr8
+  "Create a PostgreSQL `macaddr8` (8-byte EUI-64 MAC address) value."
+  [s]
+  (object :macaddr8 (str s)))
+
+(defn pg-lsn
+  "Create a PostgreSQL `pg_lsn` (log sequence number) value."
+  [s]
+  (object :pg_lsn (str s)))
+
 ;;
 ;; Constructors for geometric types
 ;;

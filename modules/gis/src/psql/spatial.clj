@@ -2,8 +2,8 @@
   "Constructors for PostGIS geometry objects.
 
    (require '[psql.spatial :as st])"
-  (:import [net.postgis.jdbc.geometry Geometry LineString LinearRing
-            MultiLineString MultiPoint MultiPolygon Point Polygon]
+  (:import [net.postgis.jdbc.geometry Geometry GeometryCollection LineString
+            LinearRing MultiLineString MultiPoint MultiPolygon Point Polygon]
            [net.postgis.jdbc PGgeometryLW]))
 
 (defn srid
@@ -79,6 +79,15 @@
   (cond (instance? MultiPolygon polygons) polygons
         (coll? polygons) (MultiPolygon. ^"[Lnet.postgis.jdbc.geometry.Polygon;" (into-array Polygon (map polygon polygons)))
         :else (MultiPolygon. (str polygons))))
+
+(defn geometry-collection
+  "Create a GeometryCollection from a collection of geometry objects."
+  [geometries]
+  (cond (instance? GeometryCollection geometries) geometries
+        (coll? geometries) (GeometryCollection.
+                            ^"[Lnet.postgis.jdbc.geometry.Geometry;"
+                            (into-array Geometry geometries))
+        :else (GeometryCollection. (str geometries))))
 
 (defn pg-geom
   "Wrap a geometry in the lightweight PGgeometry envelope for JDBC."
