@@ -164,3 +164,18 @@
       (is (instance? PGobject obj))
       (is (= type (.getType obj)))
       (is (= value (.getValue obj))))))
+
+(deftest env-spec-ssl-password-and-guc-options
+  (testing "PGSSLPASSWORD maps to the pgjdbc sslpassword property"
+    (is (= "secret" (:sslpassword (pg/env-spec {:PGSSLPASSWORD "secret"})))))
+  (testing "PGTZ and PGDATESTYLE become -c GUC options"
+    (is (= "-c TimeZone=UTC" (:options (pg/env-spec {:PGTZ "UTC"}))))
+    (is (= "-c DateStyle=ISO,\\ MDY"
+           (:options (pg/env-spec {:PGDATESTYLE "ISO, MDY"})))))
+  (testing "GUC options merge onto an explicit PGOPTIONS, in order"
+    (is (= "-c work_mem=64MB -c TimeZone=UTC -c DateStyle=ISO"
+           (:options (pg/env-spec {:PGOPTIONS "-c work_mem=64MB"
+                                   :PGTZ "UTC"
+                                   :PGDATESTYLE "ISO"})))))
+  (testing "no options key when none of the option sources are present"
+    (is (not (contains? (pg/env-spec {:PGDATABASE "d"}) :options)))))

@@ -1,7 +1,8 @@
 (ns psql.core
   "Use PostgreSQL from Clojure with connection parameter defaults from PGDATABASE, PGHOST, PGPORT, and PGUSER.
   Read the password from ~/.pgpass when it is available."
-  (:require [psql.types]
+  (:require [clojure.string :as str]
+            [psql.types]
             [psql.pool :refer [pooled-db] :as pool]
             [psql.pgpass :as pgpass]
             [psql.service :as service]
@@ -38,9 +39,31 @@
      :user username
      :dbname username}))
 
+(defn- guc-option
+  "Render a libpq server-setting env var as a `-c NAME=value` startup option,
+  backslash-escaping spaces in the value the way libpq's options string requires."
+  [setting value]
+  (str "-c " setting "=" (str/replace value " " "\\ ")))
+
+(defn- env-options
+  "Merge PGOPTIONS with the PGTZ and PGDATESTYLE server settings into a single
+  pgjdbc `options` string, or nil when none of the three are present."
+  [{:keys [PGOPTIONS PGTZ PGDATESTYLE]}]
+  (let [parts (cond-> []
+                PGOPTIONS (conj PGOPTIONS)
+                PGTZ (conj (guc-option "TimeZone" PGTZ))
+                PGDATESTYLE (conj (guc-option "DateStyle" PGDATESTYLE)))]
+    (when (seq parts) (str/join " " parts))))
+
 (defn env-spec
-  "Get a db spec from libpq PG* environment variables. Use pgjdbc property names where needed.
-  PGHOSTADDR, PGCLIENTENCODING, PGREQUIREPEER, PGSSLCRL/SNI/min-max-proto, and the Unix-socket default host are unsupported."
+  "Get a db spec from libpq PG* environment variables, using pgjdbc property
+  names where they differ. `PGTZ` and `PGDATESTYLE` are folded into the pgjdbc
+  `options` string (merged after any `PGOPTIONS`).
+
+  Not supported, because pgjdbc has no equivalent: `PGHOSTADDR` (no DNS-bypass
+  address; use `PGHOST`), `PGCLIENTENCODING` (pgjdbc always speaks UTF-8),
+  `PGREQUIREPEER`, `PGSSLSNI`, `PGSSLCRL`, the SSL min/max protocol vars, and
+  Unix-domain sockets (pgjdbc needs a custom socket factory)."
   [{:keys [PGDATABASE PGHOST PGPORT PGUSER PGTARGETSESSIONATTRS] :as env}]
   {:pre [(map? env)]
    :post [(map? %)]}
@@ -48,9 +71,9 @@
                         :PGSSLCERT :sslcert
                         :PGSSLKEY :sslkey
                         :PGSSLROOTCERT :sslrootcert
+                        :PGSSLPASSWORD :sslpassword
                         :PGAPPNAME :ApplicationName
                         :PGCONNECT_TIMEOUT :connectTimeout
-                        :PGOPTIONS :options
                         :PGCHANNELBINDING :channelBinding
                         :PGGSSENCMODE :gssEncMode
                         :PGGSSLIB :gsslib
@@ -74,6 +97,7 @@
       PGHOST (assoc :host PGHOST)
       PGPORT (assoc :port PGPORT)
       PGUSER (assoc :user PGUSER)
+      (env-options env) (assoc :options (env-options env))
       PGTARGETSESSIONATTRS
       (assoc :targetServerType
              (get target-server-types PGTARGETSESSIONATTRS PGTARGETSESSIONATTRS)))))

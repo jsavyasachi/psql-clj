@@ -1,5 +1,35 @@
 # Changelog
 
+## [2.4.0] - 2026-08-26
+
+Backward-compatible additions. Closes the remaining pgjdbc parity gaps from the
+value audit; the connection-driven features were verified against a live
+PostgreSQL 16 with logical replication enabled.
+
+### Added
+- **Large objects** (`psql.largeobject`): wrap pgjdbc's `LargeObjectManager` -
+  `create!`, `open`, `read-bytes`, `write-bytes!`, `seek!`, `tell`, `lo-size`,
+  `truncate!`, `close!`, `input-stream`/`output-stream`, `unlink!`, plus
+  `store!`/`fetch` conveniences (run inside a transaction).
+- **Streaming replication** (`psql.replication`): LSN codec (`lsn`,
+  `lsn->string`, `lsn->long`), replication-slot management
+  (`create-logical-slot!`, `create-physical-slot!`, `drop-slot!`), a
+  `replication-spec`/`replication-api` connection helper, and logical decoding
+  streams (`start-logical-replication`, `read-pending`/`read-change`,
+  `set-flushed-lsn!`/`set-applied-lsn!`, `last-received-lsn`, `close-stream!`).
+- **Lower-level COPY lifecycle** (`psql.copy`): a chunk-size arity on `copy-in`,
+  plus `start-copy-in`/`write-copy!`/`flush-copy!`/`end-copy!`,
+  `start-copy-out`/`read-copy!`, `copy-dual`, and `cancel-copy!` for driving the
+  COPY protocol directly (including `ByteStreamWriter` input).
+- **libpq environment coverage** (`psql.core/env-spec`): map `PGSSLPASSWORD`,
+  and fold `PGTZ`/`PGDATESTYLE` into the pgjdbc `options` string (merged after
+  any `PGOPTIONS`). The docstring now states precisely which libpq variables
+  pgjdbc cannot represent (`PGHOSTADDR`, `PGCLIENTENCODING`, `PGSSLSNI`,
+  `PGSSLCRL`, Unix-domain sockets) and why.
+- **Property-based parser tests** (`psql.property-test`): `test.check` coverage
+  for range bound quoting/escaping round-trips, inet IPv4/IPv6 parsing with
+  optional prefixes, and array token splitting.
+
 ## [2.3.0] - 2026-08-26
 
 Backward-compatible additions.
