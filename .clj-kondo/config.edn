@@ -1,0 +1,5 @@
+{;; clojure.test.check's defspec defines a var, but on the cold cache CI
+ ;; always has, clj-kondo does not expand it and reports every spec name in
+ ;; test/psql/property_test.clj as an unresolved symbol. Linting it as deftest
+ ;; is cache-independent, so local and CI agree.
+ :lint-as {clojure.test.check.clojure-test/defspec clojure.test/deftest}}
