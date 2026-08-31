@@ -87,12 +87,14 @@
    :geometries [Geometry]})
 
 (s/defschema Feature
-  {:geometry (s/maybe Geometry)
+  {:type (s/eq :Feature)
+   :geometry (s/maybe Geometry)
    :properties (s/maybe {})
    (s/optional-key :id) s/Any})
 
 (s/defschema FeatureCollection
-  {:features [Feature]})
+  {:type (s/eq :FeatureCollection)
+   :features [Feature]})
 
 ;;
 ;; Predicates

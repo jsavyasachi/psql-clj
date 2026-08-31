@@ -12,3 +12,9 @@
   (testing "multi-point emits real coordinates and validates its schema"
     (is (= {:type :MultiPoint :coordinates [[1 2] [3 4]]}
            (gj/multi-point [[1 2] [3 4]])))))
+
+(deftest feature-schemas-require-their-types
+  (testing "Feature pins its GeoJSON type"
+    (is (contains? gj/Feature :type)))
+  (testing "FeatureCollection pins its GeoJSON type"
+    (is (contains? gj/FeatureCollection :type))))
