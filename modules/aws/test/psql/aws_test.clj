@@ -30,3 +30,15 @@
                                      :user "u" :region "eu-central-1"
                                      :credentials-provider creds})]
       (is (re-find #"^h\.rds\.amazonaws\.com:5432" token)))))
+
+(deftest iam-spec-rejects-non-tls-ssl-modes
+  (doseq [sslmode ["disable" "allow" "prefer"]]
+    (testing (str "rejects sslmode " sslmode)
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                            (re-pattern (str "TLS.*" sslmode))
+                            (aws/iam-spec
+                             :host "mydb.abc123.us-east-1.rds.amazonaws.com"
+                             :user "appuser"
+                             :region "us-east-1"
+                             :sslmode sslmode
+                             :credentials-provider creds))))))

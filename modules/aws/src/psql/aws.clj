@@ -45,16 +45,21 @@
 
   Resolve :host/:port/:user/:dbname with psql.core/spec. PG* env vars and
   ~/.pgpass still apply. Then override :password with a new token. RDS IAM
-  authentication requires TLS, so :sslmode defaults to \"require\".
+  authentication requires TLS. :sslmode defaults to 'require' and must be
+  one of 'require', 'verify-ca', or 'verify-full'.
 
   Require :region and a :host reachable as the RDS endpoint. Pass
   :credentials-provider to override the default AWS credentials chain."
   [& {:keys [region sslmode credentials-provider] :or {sslmode "require"} :as opts}]
-  (let [spec-opts (apply concat (dissoc opts :region :sslmode :credentials-provider))
+  (let [tls-sslmodes #{"require" "verify-ca" "verify-full"}]
+    (when-not (contains? tls-sslmodes sslmode)
+      (throw (ex-info (str "RDS IAM authentication requires TLS; unsupported sslmode " sslmode)
+                      {:psql/error :invalid-sslmode :sslmode sslmode})))
+    (let [spec-opts (apply concat (dissoc opts :region :sslmode :credentials-provider))
         base (apply pg/spec spec-opts)
         token (rds-auth-token {:host (:host base)
                                :port (:port base)
                                :user (:user base)
                                :region region
                                :credentials-provider credentials-provider})]
-    (assoc base :password token :sslmode sslmode)))
+      (assoc base :password token :sslmode sslmode))))
