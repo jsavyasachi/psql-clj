@@ -1,4 +1,4 @@
-(defproject net.clojars.savya/psql-clj-gis "2.1.0"
+(defproject net.clojars.savya/psql-clj-gis "3.0.0"
   :plugins [[lein-tools-deps "0.4.5"]]
   :middleware [lein-tools-deps.plugin/resolve-dependencies-with-deps-edn]
   :lein-tools-deps/config {:config-files [:install :user :project]}

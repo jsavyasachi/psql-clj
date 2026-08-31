@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.4.1] - 2026-08-30
+
+### Fixed
+- **Service-file resolution** (`psql.service`) now remains isolated during
+  concurrent connection resolution, so callers cannot read another thread's
+  temporary service-file configuration.
+- **Large-object fetches** (`psql.largeobject/fetch`) now reject objects larger
+  than `Integer/MAX_VALUE` with `:psql/error :large-object-too-large` instead
+  of failing after an invalid size narrowing.
+
+## [3.0.0] - 2026-08-30
+
+### Changed
+- **Breaking:** `psql-clj-gis` now requires GeoJSON `Feature` and
+  `FeatureCollection` maps to include their mandatory `:type` entry. Callers
+  validating type-less maps must add `:type :Feature` or
+  `:type :FeatureCollection`.
+
+## [3.0.0] - 2026-08-30
+
+### Changed
+- **Breaking:** `psql-clj-aws/iam-spec` now rejects non-TLS `:sslmode` values
+  with `:psql/error :invalid-sslmode`. Callers using `disable`, `allow`, or
+  `prefer` must use `require`, `verify-ca`, or `verify-full` instead.
+
 ## [2.4.0] - 2026-08-26
 
 Backward-compatible additions. Closes the remaining pgjdbc parity gaps from the

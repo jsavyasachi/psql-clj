@@ -1,7 +1,7 @@
 {:paths ["src"]
 
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
-        net.clojars.savya/psql-clj {:mvn/version "2.0.2"}
+        net.clojars.savya/psql-clj {:mvn/version "2.4.1"}
         software.amazon.awssdk/rds {:mvn/version "2.53.1"}}
 
  :aliases
