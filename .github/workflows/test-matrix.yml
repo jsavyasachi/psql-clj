@@ -53,6 +53,7 @@ jobs:
           path: ~/.m2/repository
           key: m2-${{ hashFiles('modules/gis/deps.edn') }}
           restore-keys: m2-
+      - run: clojure -T:build install
       - run: clojure -M:${{ matrix.clojure }}:test
         working-directory: modules/gis
 
@@ -78,6 +79,7 @@ jobs:
           path: ~/.m2/repository
           key: m2-${{ hashFiles('modules/aws/deps.edn') }}
           restore-keys: m2-
+      - run: clojure -T:build install
       - run: clojure -M:${{ matrix.clojure }}:test
         working-directory: modules/aws
 
