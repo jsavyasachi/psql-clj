@@ -47,3 +47,26 @@
       (finally
         (.delete service-file)
         (.delete directory)))))
+
+(deftest resolve-service-without-explicit-file-serializes-parser
+  (let [lock (var-get #'service/service-parser-lock)
+        lock-held (promise)
+        release (promise)
+        parser-called (promise)
+        holder (future
+                 (locking lock
+                   (deliver lock-held true)
+                   @release))
+        parser (future
+                 ((var-get #'service/with-service-file)
+                  {}
+                  #(deliver parser-called true)))]
+    (try
+      @lock-held
+      (is (= ::blocked (deref parser-called 100 ::blocked)))
+      (deliver release true)
+      (is (= true (deref parser-called 1000 ::timeout)))
+      (finally
+        (deliver release true)
+        @holder
+        @parser))))

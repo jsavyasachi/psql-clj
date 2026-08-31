@@ -14,8 +14,8 @@
 
 (defn- with-service-file
   [env f]
-  (if-let [path (service-file-path env)]
-    (locking service-parser-lock
+  (locking service-parser-lock
+    (if-let [path (service-file-path env)]
       (let [previous (System/getProperty service-file-property)]
         (try
           (System/setProperty service-file-property (str path))
@@ -23,8 +23,8 @@
           (finally
             (if previous
               (System/setProperty service-file-property previous)
-              (System/clearProperty service-file-property))))))
-    (f)))
+              (System/clearProperty service-file-property)))))
+      (f))))
 
 (defn- properties->spec
   [properties]
