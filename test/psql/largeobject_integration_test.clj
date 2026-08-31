@@ -39,3 +39,14 @@
   (jdbc/with-transaction [tx (pg/spec)]
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Unknown large-object mode"
                           (lo/open tx 1 :bogus)))))
+
+(deftest fetch-size-rejects-objects-too-large-for-byte-arrays
+  (let [fetch-size (ns-resolve 'psql.largeobject 'fetch-size)]
+    (is (= ::too-large
+           (if fetch-size
+             (try
+               (fetch-size (inc Integer/MAX_VALUE))
+               ::not-rejected
+               (catch clojure.lang.ExceptionInfo _
+                 ::too-large))
+             ::missing)))))

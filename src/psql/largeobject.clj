@@ -114,10 +114,19 @@
       oid
       (finally (.close lo)))))
 
+(defn- fetch-size
+  [size]
+  (if (> size Integer/MAX_VALUE)
+    (throw (ex-info (str "Large object is too large to fetch as a byte array: " size " bytes")
+                    {:psql/error :large-object-too-large
+                     :size size
+                     :max-size Integer/MAX_VALUE}))
+    (int size)))
+
 (defn fetch
   "Read the entire contents of the large object OID as a byte array."
   ^bytes [^Connection conn oid]
   (let [lo (open conn oid :read)]
     (try
-      (.read lo (int (.size64 lo)))
+      (.read lo (fetch-size (.size64 lo)))
       (finally (.close lo)))))
