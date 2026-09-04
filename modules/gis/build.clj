@@ -24,12 +24,12 @@
                 :version version
                 :basis @basis
                 :src-dirs ["src"]
-                :scm {:url "https://github.com/jsavyasachi/psql-clj"
-                      :connection "scm:git:https://github.com/jsavyasachi/psql-clj.git"
-                      :developerConnection "scm:git:ssh://git@github.com/jsavyasachi/psql-clj.git"
+                :scm {:url "https://github.com/savyalabs/psql-clj"
+                      :connection "scm:git:https://github.com/savyalabs/psql-clj.git"
+                      :developerConnection "scm:git:ssh://git@github.com/savyalabs/psql-clj.git"
                       :tag (str "v" version)}
                 :pom-data [[:description "PostGIS geometry and geography support for psql-clj: spatial constructors, GeoJSON coercion, and next.jdbc column/parameter extensions."]
-                           [:url "https://github.com/jsavyasachi/psql-clj"]
+                           [:url "https://github.com/savyalabs/psql-clj"]
                            [:licenses
                             [:license
                              [:name "BSD-2-Clause"]

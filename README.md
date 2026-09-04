@@ -2,7 +2,7 @@
 
 [![Clojars Project](https://img.shields.io/clojars/v/net.clojars.savya/psql-clj.svg)](https://clojars.org/net.clojars.savya/psql-clj)
 [![cljdoc](https://cljdoc.org/badge/net.clojars.savya/psql-clj)](https://cljdoc.org/d/net.clojars.savya/psql-clj)
-[![test](https://github.com/jsavyasachi/psql-clj/actions/workflows/test.yml/badge.svg)](https://github.com/jsavyasachi/psql-clj/actions/workflows/test.yml)
+[![test](https://github.com/savyalabs/psql-clj/actions/workflows/test.yml/badge.svg)](https://github.com/savyalabs/psql-clj/actions/workflows/test.yml)
 
 PostgreSQL helpers for Clojure: connection specs that use `PG*`, `PGSERVICE`, and `.pgpass`; HikariCP pools that keep pgjdbc properties; and [next.jdbc](https://github.com/seancorfield/next-jdbc) type coercion. It supports JSON/JSONB, ranges, arrays, `inet`/`cidr`, geometry, interval, money, and enums. It also provides `COPY` and `LISTEN`/`NOTIFY` helpers. The `psql-clj-gis` companion provides PostGIS geometry.
 

@@ -24,12 +24,12 @@
                 :version version
                 :basis @basis
                 :src-dirs ["src"]
-                :scm {:url "https://github.com/jsavyasachi/psql-clj"
-                      :connection "scm:git:https://github.com/jsavyasachi/psql-clj.git"
-                      :developerConnection "scm:git:ssh://git@github.com/jsavyasachi/psql-clj.git"
+                :scm {:url "https://github.com/savyalabs/psql-clj"
+                      :connection "scm:git:https://github.com/savyalabs/psql-clj.git"
+                      :developerConnection "scm:git:ssh://git@github.com/savyalabs/psql-clj.git"
                       :tag (str "v" version)}
                 :pom-data [[:description "AWS RDS/Aurora IAM authentication for psql-clj: build a db-spec whose password is a short-lived RDS IAM auth token."]
-                           [:url "https://github.com/jsavyasachi/psql-clj"]
+                           [:url "https://github.com/savyalabs/psql-clj"]
                            [:licenses
                             [:license
                              [:name "BSD-2-Clause"]

@@ -24,12 +24,12 @@
                 :version version
                 :basis @basis
                 :src-dirs ["src"]
-                :scm {:url "https://github.com/jsavyasachi/psql-clj"
-                      :connection "scm:git:https://github.com/jsavyasachi/psql-clj.git"
-                      :developerConnection "scm:git:ssh://git@github.com/jsavyasachi/psql-clj.git"
+                :scm {:url "https://github.com/savyalabs/psql-clj"
+                      :connection "scm:git:https://github.com/savyalabs/psql-clj.git"
+                      :developerConnection "scm:git:ssh://git@github.com/savyalabs/psql-clj.git"
                       :tag (str "v" version)}
                 :pom-data [[:description "PostgreSQL helpers for Clojure: environment- and .pgpass-aware connection specs, HikariCP pooling, and next.jdbc type coercion for JSON/JSONB, arrays, inet and enums. PostGIS support lives in the psql-clj-gis companion."]
-                           [:url "https://github.com/jsavyasachi/psql-clj"]
+                           [:url "https://github.com/savyalabs/psql-clj"]
                            [:licenses
                             [:license
                              [:name "BSD-2-Clause"]

@@ -201,6 +201,6 @@ republished as `net.clojars.savya/psql-clj`.
 - Unused `clj-time` and `org.clojure/java.data` dependencies.
 - Travis configuration, `deps.edn` and `Makefile`.
 
-[2.0.1]: https://github.com/jsavyasachi/psql-clj/releases/tag/v2.0.1
-[2.0.0]: https://github.com/jsavyasachi/psql-clj/releases/tag/v2.0.0
-[1.0.0]: https://github.com/jsavyasachi/psql-clj/releases/tag/v1.0.0
+[2.0.1]: https://github.com/savyalabs/psql-clj/releases/tag/v2.0.1
+[2.0.0]: https://github.com/savyalabs/psql-clj/releases/tag/v2.0.0
+[1.0.0]: https://github.com/savyalabs/psql-clj/releases/tag/v1.0.0
